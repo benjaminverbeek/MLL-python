@@ -4,7 +4,12 @@ from math import sin, cos
 # Fäldt, Kupsc
 
 # Note that these functions can be called with a list of args by using
-# F(*args) (* unpacks list/tuple)
+# F(*args) (* unpacks list/tuple). 
+# xi = (th,th1,th2,ph1,ph2)     (angle space) 
+# th - theta; ph - phi
+# beta = (eta, dPhi, aL, aLb)   (decay parameters)
+# eta aka. alpaha; dPhi - phase; aL - alpha-lambda; aLb - alpha-lambda-bar
+# W(*beta, xi) means W can work with (eta, dPhi, aL, aLb, xi)
 
 F0 = lambda th,th1,th2,ph1,ph2 : 1
 
