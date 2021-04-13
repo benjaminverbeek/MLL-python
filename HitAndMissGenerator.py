@@ -55,6 +55,7 @@ def logLikelihoodFunc(X, alpha):
     s += np.log(pdf(i,alpha)) # log-sum of pdf gives LL
   return s
 
+<<<<<<< Updated upstream
 # this is a brute-force solution. I should check zeroes of derivative (numerically or analytically).
 # takes quite a while... 
 # NOTE: built in numpy-function maximizing inner for-loop?
@@ -62,6 +63,10 @@ def logLikelihoodFunc(X, alpha):
 L = []              # log-likelihood. We want to maximize this
 for alph in a:      # for each alpha, check the log-likelihood of observing dataset
   L.append(logLikelihoodFunc(costheta_dist, alph))
+=======
+# run optimization (really slow!): # TODO: select suitable method
+res = optimize.minimize(negLogLikelihoodFunc, -0.5, costheta_dist, tol=10**-4)
+>>>>>>> Stashed changes
 
 
 #print(a)
