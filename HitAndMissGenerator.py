@@ -1,6 +1,7 @@
 # Import the any necessary modules
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy import optimize
 
 
 # Set the seed for the random number generator
@@ -43,29 +44,25 @@ plt.show()
 # int [-1,1] of 1+ax^2 dx = 2*(x + ax^3/3) | x=1 = (2*3 + 2*a)/3
 pdf = lambda costheta, alpha : (3 /(6+2*alpha)) * (1 + alpha*costheta**2) # normalized to integrate to 1 on [-1,1]
 
-step = 0.05
-a = [-1+step*i for i in range(int(1//step))] # range of alphas
-#a = [-0.3, -0.2, -0.1] # guesses for alpha
-
-# what we want to maximize
-def logLikelihoodFunc(X, alpha):
+# what we want to maximize... (minimize neg.)
+def negLogLikelihoodFunc(alpha, X):
   '''Dataset X [list], parameter alpha [float]'''
   s = 0       # sum
   for i in X: # iterate over samples
-    s += np.log(pdf(i,alpha)) # log-sum of pdf gives LL
+    s -= np.log(pdf(i,alpha)) # log-sum of pdf gives LL
   return s
 
-# this is a brute-force solution. I should check zeroes of derivative (numerically or analytically).
-# takes quite a while... 
-# NOTE: built in numpy-function maximizing inner for-loop?
-# TODO: Replace this with built-in Python which finds max for all alpha, not just a given range.
-L = []              # log-likelihood. We want to maximize this
-for alph in a:      # for each alpha, check the log-likelihood of observing dataset
-  L.append(logLikelihoodFunc(costheta_dist, alph))
+# run optimization (really slow!): # TODO: select suitable method
+res = optimize.minimize(negLogLikelihoodFunc, -0.5, costheta_dist, tol=10**-5)
 
+print(f"Deviation from alpha = {alpha}: {res['x'][0]-(alpha)}") # depends on set of points obviously.
+print(res)
+print(f'Convergence: {res["success"]}')
 
+'''
 #print(a)
 print(len(L))
 ind = L.index(max(L))
 print(f"Max at alpha = {a[ind]:.2f}, yields L = {max(L)}")
 # note to self: f"txt {x:totalChars.decimalPrecision f}" formats floats. use totalChars for "tabs"
+'''
