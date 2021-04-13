@@ -1,6 +1,7 @@
 # Import the any necessary modules
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy import optimize
 
 
 # Set the seed for the random number generator
