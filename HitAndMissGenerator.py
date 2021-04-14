@@ -1,15 +1,15 @@
-# Import the any necessary modules
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy import optimize
-import time
 
 
-# Set the seed for the random number generator
-np.random.seed()
+
+
 # Implement the hit or miss generator
 # generates distribution following 1 + alpha * x^2
 def hit_miss_generator(N, alpha):
+  # Import the any necessary modules
+  import numpy as np
+  # Set the seed for the random number generator
+  np.random.seed()
+
   i = 0
   while (i < N):
     costheta = np.random.uniform(-1, 1)
@@ -20,7 +20,10 @@ def hit_miss_generator(N, alpha):
     if (rand < dsdcostheta / upper_limit): # makes it follow distribution
       yield costheta
 
+# Code that won't run on import
 if __name__ == "__main__":
+  import matplotlib.pyplot as plt
+  import time
   start_time = time.time()
 
   # Set some parameters for the event generator

@@ -1,22 +1,41 @@
+# Import necessary modules
 from HitAndMissGenerator import hit_miss_generator
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import optimize
 import time
 
+########## HELP FUNCTIONS ##########
+
 # probability density function = func / (integral of func w.r.t. variables X), i.e. normalize integral.
 # pdf(x,alpha) now yields the probability of seeing x given a distribution with parameter alpha.
 # int [-1,1] of 1+ax^2 dx = 2*(x + ax^3/3) | x=1 = (2*3 + 2*a)/3
-pdf = lambda costheta, alpha : (3 /(6+2*alpha)) * (1 + alpha*costheta**2) # normalized to integrate to 1 on [-1,1]
+pdf = lambda alpha, costheta : (3 /(6+2*alpha)) * (1 + alpha*costheta**2) # normalized to integrate to 1 on [-1,1]
 
 # what we want to maximize... (minimize neg.)
 def negLogLikelihoodFunc(alpha, X):
-    '''Dataset X [list], parameter alpha [float]'''
+    '''Parameter alpha [float], dataset X [list]'''
     s = 0       # sum
     for i in X: # iterate over samples
-        s -= np.log(pdf(i,alpha)) # log-sum of pdf gives LL
+        s -= np.log(pdf(alpha, i)) # log-sum of pdf gives LL
     return s
 
+# Prototype: (use instead of older version)
+# Generalized LL-func.: send in a pdf too, and let vars be n-dim, dataset X be m-dim.
+def generalNegLogLikelihoodFunc(var, par, pdf):
+    '''var : variables to maximize [list] \n
+    par : dataset of parameters [list of lists]. \n
+    pdf : must take arguments pdf(v1,v2, ..., vN, p1, p2, ..., pM) \n
+    Minimize this function for input variables to find max of Log-Likelihood for distribution.'''
+    s = 0  # sum
+    for p in par: # iterate over samples
+        # * unpacks the list of arguments
+        s -= np.log(pdf(*var, *p)) # log-sum of pdf gives LL
+    return s
+
+######## END HELP FUNCTIONS ########
+
+# Running code:
 def main():
     
     start_time = time.time()
@@ -29,8 +48,9 @@ def main():
 
     costheta_dist = []
     for i in hit_miss_generator(N, alpha):
-        costheta_dist.append(i)
+        costheta_dist.append([i])
 
+    # Time for generation of distribution
     print('Done generating.')
     cp1 = time.time()
     print(f"--- {cp1 - start_time} seconds since start---")
@@ -38,18 +58,17 @@ def main():
     print("Minimizing negLogLikelihoodFunc...")
     # NOTE: This can easily be made multivalued. Just pack extra arguments in args-parameter (as many as needed)
     # and pack variables to optimize for aswell (make sure initial guess is same dimension as variables)...
-    res = optimize.minimize(negLogLikelihoodFunc, -0.3, costheta_dist, tol=10**-3)
+    res = optimize.minimize(generalNegLogLikelihoodFunc, [-0.3], (costheta_dist,pdf), tol=10**-3)
 
     print(f"Deviation from alpha = {alpha}: {res['x'][0]-(alpha)}") # depends on set of points obviously.
     print(res)
     print(f'Convergence: {res["success"]}')
 
     cp2 = time.time()
-    print(f"--- {cp2 - cp1} seconds since start last checkpoint ---")
-    print(f"--- {cp2 - start_time} seconds since start---")
 
-
-
+    endMsg = (  f"--- {cp2 - cp1} seconds since start last checkpoint --- \n"
+                f"      --- {cp2 - start_time} seconds since start---" )
+    print(endMsg)
 
 if __name__ == "__main__":
     main()
