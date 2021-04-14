@@ -24,7 +24,10 @@ def negLogLikelihoodFunc(alpha, X):
 # Generalized LL-func.: send in a pdf too, and let vars be n-dim, dataset X be m-dim.
 def generalNegLogLikelihoodFunc(var, par, pdf):
     '''var : variables to maximize [list] \n
-    par : dataset of parameters [list of lists]. \n
+    par : dataset of parameters [list of lists] (NOTE: the inner lists represent observed points, i.e. 
+    every parameter is not a separate list, but rather part of a set of parameters). 
+    E.g.: par = [ [a0, b0] [a1, b1] [a2, b2] ... ] and not [ [a0, a1, a2, ...] [b0, b1, b2, ...] ] 
+    where a, b are different parameters for the pdf. \n
     pdf : must take arguments pdf(v1,v2, ..., vN, p1, p2, ..., pM) \n
     Minimize this function for input variables to find max of Log-Likelihood for distribution.'''
     s = 0  # sum
