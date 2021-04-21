@@ -7,7 +7,7 @@ import numpy as np
 from scipy import optimize
 #from scipy.sparse import csc_matrix as csc
 
-###### THEORY #####
+###### THEORY ######
 alpha = 0.753   # assumed.
 
 F0 = lambda cos_th, cos_thP : 1
@@ -16,7 +16,7 @@ F2 = lambda cos_th, cos_thP : (cos_th)**2
 
 def WSingleTag(eta, delta_phi, xi):
     return F0(*xi) + eta * F2(*xi) + alpha * (1 - eta**2)**(0.5) * math.sin(delta_phi) * F1(*xi)  # W function
-###################
+#### END THEORY ####
 
 ###################
 # MC-integrator for normalization factors
@@ -40,10 +40,13 @@ def negLogLikelihood(par, var, pdf, normalizeSeparately=False, normalizationAngl
     where a, b are different variables for the pdf. \n
     pdf : must take arguments pdf(p1,p2, ..., pN, v1, v2, ..., vM)'''
     
+    t1 = time.time()
+
     print("--------")
     if normalizeSeparately==True:
         normalization = MCintegral(par, normalizationAngles)    # this one takes a really long time!
-        print("One normalization done...")
+        t2 = time.time()
+        print(f"One normalization done... took {t2 - t1:.2f} seconds.")
     else:
         normalization = 1
 
@@ -51,7 +54,9 @@ def negLogLikelihood(par, var, pdf, normalizeSeparately=False, normalizationAngl
     for v in var: # iterate over samples of xi
         # * unpacks the list of arguments
         s -= np.log(pdf(*par, v)/normalization) # log-sum of pdf gives LL. Negative so we minimize.
-    print("One set of parameters done.")    # takes a long time but not AS long as normalization.
+    t3 = time.time()
+    print(f"One set of parameters done. Took {t3 - t2:.2f} seconds.")    # takes a long time but not AS long as normalization.
+    print(f"Total time for one run was {t3 - t1:.2f} seconds.")
     return s
 
 # MAIN
@@ -62,13 +67,14 @@ def main():
 
     # Read angle data.
     xi_set = [ list(map(float,i.split())) for i in open("lAngles.txt").readlines() ]    # list (of lists)
-
+    xi_set = np.asarray(xi_set) # TODO: optimize.  Took a total of 835.8386192321777 seconds  without np.array (1mil norm.)
     print("Finished reading.")
     print(xi_set[0])
     print(f"Number of measurement points: {len(xi_set)}")
     print("--- %s seconds ---" % (time.time() - start_time))
     # takes approx. 1.3 seconds to read file as list. 3x as long to make it floats
     normalizationAngles = [ list(map(float,i.split())) for i in open("lPHSP_4Pi.txt").readlines() ]    # list (of lists)
+    normalizationAngles = np.asarray(normalizationAngles)
     # NOTE: cannot both be generators as it would create two open files? Or can they? Furthermore, going thru them
     # multiple times ruins it...
     print(normalizationAngles[0])
@@ -82,13 +88,20 @@ def main():
     initial_guess = [0.4, 60*math.pi/180]
     print(f"Initial guess: {initial_guess}")
     bnds = ((-1,1),(-7,7))   # bounds on variables
+    q = 2.396 # GeV, reaction energy (momentum transfer)
+    mLambda = 1.115683 # GeV, mass of lambda baryon (from PDG-live)
+    tau = q**2/(4*mLambda**2)   # form factor
+    tolerance = 10**-6
+    
     # eta = (tau - R^2)/(tau + R^2), 
     # where tau = q^2/(4m^2), q = 2.396 GeV here (momentum transfer), m = 1.115683 GeV (1115.683 MeV)
     # ===> eta = 0.217 (and delta_phi = 0.733 rad) is to be expected. 
 
     print("Optimizing...")
-    res = optimize.minimize(negLogLikelihood, initial_guess, (xi_set[0:], WSingleTag, True, normalizationAngles[0:]), tol=10**-4, bounds=bnds)
+    # scipy existing minimizing function. 
+    res = optimize.minimize(negLogLikelihood, initial_guess, (xi_set[0:100000], WSingleTag, True, normalizationAngles[0:100000]), tol=tolerance, bounds=bnds)
     # '''
+    # PRESENT RESULTS:
     print(res)
     print(f"Initial guess: {initial_guess}")
     print(f"Expected result: {(0.217, 42*math.pi/180)}")
@@ -96,7 +109,11 @@ def main():
     eta_res = res['x'][0]
     dphi_res = res['x'][1]
     print(f"Result for eta: {eta_res}")
-    tau = 1.28717847534
+    #tau = 1.28717847534    # todo: Check where this value went wrong! # NOTE: Found. Missed square. TODO: Add the calculation in program.
+    # TODO: Rerun and check functionality
+    # TODO: Make it so a message is sent (popup) when program is finished.: import ctypes ? 
+    #tau = 1.15442015725 # Viktors värde?
+    #tau = 1.1530071615814588 # mitt beräknade 
     R = tau**(0.5) * ((1-eta_res)/(1+eta_res))**(0.5)
     print(f"Yielding R = {R}")
     print(f"delta-phi = {dphi_res} rad, or delta-phi = {dphi_res*180/math.pi}")
