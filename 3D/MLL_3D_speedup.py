@@ -1,6 +1,6 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Program to make 3D fit (Actually simplifies to 2D)    #
-# Benjamin Verbeek, 2021-04-19                          #
+# Benjamin Verbeek, 2021-04-23                          #
 # Updated functions to work with numba, now executes    #
 # very fast. Slow part is reading input and converting  #
 # to numbda lists.                                      #
