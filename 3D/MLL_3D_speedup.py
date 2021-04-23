@@ -140,7 +140,7 @@ def main():
 
     ########## PRESENT RESULTS: ##########
     print(res)  # scipy default result structure
-    print("------ TOOK A TOTAL OF %s SECONDS ------" % (time.time() - start_time))
+    print(f"------ TOOK A TOTAL OF {time.time() - start_time:.3f} SECONDS ------")
     print(f"Initial guess: \t\t {initial_guess}")
     print(f"Expected result: \t {(0.217, 42*PI/180)}") # input to generate data, according to Viktor
     eta_res = res['x'][0]
@@ -153,7 +153,7 @@ def main():
     hess = (res['hess_inv']).todense()
     print("Inverse Hessian:")
     print(hess)
-    print(f'Variance eta: \t {hess[0][0]} \nVariance delta-phi: {hess[1][1]} (rad)')
+    print(f'Variance eta: \t\t {hess[0][0]} \nVariance delta-phi: \t {hess[1][1]} (rad)')
     ########## END PRESENT RESULTS ##########
 
 ########## END MAIN ##########
