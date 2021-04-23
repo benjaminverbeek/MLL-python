@@ -1,7 +1,7 @@
 # code to make 3D fit (Actually simplifies to 2D)
 # Benjamin Verbeek, 2021-04-19
-import math
-import os
+import math  # NOTE: what do I need? Pi? anything else?
+import os    # TODO: Only import neccesary modules.
 import time
 import numpy as np
 from scipy import optimize
@@ -46,10 +46,13 @@ def MCintegral(par, uniformAngles):
         n += 1
     return 1/n * s * (2)**2    # MC-integral    # NOTE: the constant (2*math.pi)**2 doesn't matter for max? # PI^2 was off!
 
+# this version, using map, is slightly faster for the full 5m set (30 vs 40 secs)
 def MCintegralImproved(par,uniformAngles):
-    func = WSingleTagIntegrableMap(par)
+    func = WSingleTagIntegrableMap(*par)
     uAng = uniformAngles.copy()
+    print("ok1")
     res = list(map(func, uAng))
+    print("ok2")
     return 4*sum(res)/len(uniformAngles)    # area 2x2
 
 # Generalized LL-func.: send in a pdf too, and let par be n-dim, dataset var X be m-dim.
@@ -68,8 +71,8 @@ def negLogLikelihood(par, var, pdf, normalizeSeparately=False, normalizationAngl
 
     print("--------")
     if normalizeSeparately==True:
-        #normalization = MCintegral(par, normalizationAngles)    # this one takes a really long time!
-        normalization = integrate.nquad(WSingleTagIntegrable(*par), [[-1,1],[-1,1]])[0] # fast. returns (val, err) so must take [0]
+        normalization = MCintegralImproved(par, normalizationAngles)    # this one takes a really long time!
+        #normalization = integrate.nquad(WSingleTagIntegrable(*par), [[-1,1],[-1,1]])[0] # fast. returns (val, err) so must take [0]
         # NOTE: Can't use non MC because we need to balance for detector?
         print(normalization)
         t2 = time.time()
@@ -83,17 +86,32 @@ def negLogLikelihood(par, var, pdf, normalizeSeparately=False, normalizationAngl
         s -= np.log(pdf(*par, v)/normalization) # log-sum of pdf gives LL. Negative so we minimize.
     t3 = time.time()    # TODO: vectorized function calls?
     '''
-    # attempt to use map instead of iterating...
+
+    #'''
+    # attempt to use map instead of iterating... this is faster. About 9s vs abt 11-12s
+    #print("ok0")
+    func = WSingleTagIntegrableMap(*par)
+    tempVar = var.copy()
+    #print("ok1")
+    tempVar = list(map(func, tempVar))    # applies W       # takes a little time
+    #print("ok2")
+    tempVar = list(map(np.log, tempVar))  # applies log     # takes a little time
+    #print("ok3")
+    s = -1*sum(tempVar) + len(var)*np.log(normalization)    # sum, minus, normalize.
+    #print("ok4")
+    #'''
+    '''
+    # using listcomp instead of map: # seems a little slower
     print("ok0")
     func = WSingleTagIntegrableMap(*par)
     tempVar = var.copy()
     print("ok1")
-    tempVar = list(map(func, tempVar))    # applies W       # takes time
-    print("ok2")
-    tempVar = list(map(np.log, tempVar))  # applies log     # takes time
+    tempVar = [np.log(func(v)) for v in tempVar]
     print("ok3")
-    s = -1*sum(tempVar) + len(var)*np.log(normalization)   # sum, minus, normalize.
+    s = -1*sum(tempVar) + len(var)*np.log(normalization)    # sum, minus, normalize.
     print("ok4")
+    '''
+
     t3 = time.time()
     print(f"One set of parameters done. Took {t3 - t2:.2f} seconds.")    # takes a long time but not AS long as normalization.
     print(f"Total time for one run was {t3 - t1:.2f} seconds.")
@@ -131,7 +149,8 @@ def main():
     bnds = ((-1,1),(-7,7))   # bounds on variables
     q = 2.396 # GeV, reaction energy (momentum transfer)
     mLambda = 1.115683 # GeV, mass of lambda baryon (from PDG-live)
-    tau = q**2/(4*mLambda**2)   # form factor
+    tau = q**2/(4*mLambda**2)   # form factor #tau = 1.15442015725 # Viktors värde? #tau = 1.1530071615814588 # mitt beräknade 
+    
     tolerance = 10**-6
 
     # int2res = integrate.nquad(WSingleTagIntegrable(0.2, 42*math.pi/180), [[-1,1],[-1,1]])   # NOTE: WORKS
@@ -140,10 +159,9 @@ def main():
     # eta = (tau - R^2)/(tau + R^2), 
     # where tau = q^2/(4m^2), q = 2.396 GeV here (momentum transfer), m = 1.115683 GeV (1115.683 MeV)
     # ===> eta = 0.217 (and delta_phi = 0.733 rad) is to be expected. 
-
     print("Optimizing...")
     # scipy existing minimizing function. 
-    res = optimize.minimize(negLogLikelihood, initial_guess, (xi_set[0:], WSingleTag, True, normalizationAngles[0:1]), tol=tolerance, bounds=bnds)
+    res = optimize.minimize(negLogLikelihood, initial_guess, (xi_set[0:], WSingleTag, True, normalizationAngles[0:]), tol=tolerance, bounds=bnds)
     # '''
     # PRESENT RESULTS:
     print(res)
@@ -153,11 +171,7 @@ def main():
     eta_res = res['x'][0]
     dphi_res = res['x'][1]
     print(f"Result for eta: {eta_res}")
-    #tau = 1.28717847534    # todo: Check where this value went wrong! # NOTE: Found. Missed square. TODO: Add the calculation in program.
-    # TODO: Rerun and check functionality
     # TODO: Make it so a message is sent (popup) when program is finished.: import ctypes ? 
-    #tau = 1.15442015725 # Viktors värde?
-    #tau = 1.1530071615814588 # mitt beräknade 
     R = tau**(0.5) * ((1-eta_res)/(1+eta_res))**(0.5)
     print(f"Yielding R = {R}")
     print(f"delta-phi = {dphi_res} rad, or delta-phi = {dphi_res*180/math.pi}")
