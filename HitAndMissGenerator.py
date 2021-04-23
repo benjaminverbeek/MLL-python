@@ -1,7 +1,3 @@
-
-
-
-
 # Implement the hit or miss generator
 # generates distribution following 1 + alpha * x^2
 def hit_miss_generator(N, alpha):
@@ -16,6 +12,22 @@ def hit_miss_generator(N, alpha):
     rand = np.random.uniform(0, 1)
     dsdcostheta = 1 + alpha * costheta**2 # calculate the angular distribution
     upper_limit = 1 + abs(alpha) # and normalise it
+    i += 1
+    if (rand < dsdcostheta / upper_limit): # makes it follow distribution
+      yield costheta
+
+def hit_miss_generator_2D(N, alpha, beta):
+  # Import the any necessary modules
+  import numpy as np
+  # Set the seed for the random number generator
+  np.random.seed()
+
+  i = 0
+  while (i < N):
+    costheta = np.random.uniform(-1, 1)
+    rand = np.random.uniform(0, 1)
+    dsdcostheta = beta + alpha * costheta**2 # calculate the angular distribution
+    upper_limit = beta + abs(alpha) # and normalise it
     i += 1
     if (rand < dsdcostheta / upper_limit): # makes it follow distribution
       yield costheta
