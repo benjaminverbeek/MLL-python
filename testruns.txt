@@ -1,0 +1,363 @@
+One normalization done... took 0.22 seconds.
+One set of parameters done. Took 1.86 seconds.
+Total time for one run was 2.08 seconds.
+--------
+2.6672213991197546
+One normalization done... took 0.22 seconds.
+One set of parameters done. Took 1.83 seconds.
+Total time for one run was 2.05 seconds.
+--------
+3.854106129174374
+One normalization done... took 0.22 seconds.
+One set of parameters done. Took 1.87 seconds.
+Total time for one run was 2.09 seconds.
+--------
+3.854106142502303
+One normalization done... took 0.22 seconds.
+One set of parameters done. Took 1.86 seconds.
+Total time for one run was 2.07 seconds.
+--------
+3.854106129173754
+One normalization done... took 0.22 seconds.
+One set of parameters done. Took 1.82 seconds.
+Total time for one run was 2.05 seconds.
+--------
+4.269515086562635
+One normalization done... took 0.22 seconds.
+One set of parameters done. Took 1.89 seconds.
+Total time for one run was 2.11 seconds.
+--------
+4.269515099890653
+One normalization done... took 0.22 seconds.
+One set of parameters done. Took 1.85 seconds.
+Total time for one run was 2.07 seconds.
+--------
+4.269515086561898
+One normalization done... took 0.22 seconds.
+One set of parameters done. Took 1.85 seconds.
+Total time for one run was 2.07 seconds.
+--------
+4.177692276108574
+One normalization done... took 0.22 seconds.
+One set of parameters done. Took 1.89 seconds.
+Total time for one run was 2.11 seconds.
+--------
+4.177692289436617
+One normalization done... took 0.22 seconds.
+One set of parameters done. Took 1.86 seconds.
+Total time for one run was 2.07 seconds.
+--------
+4.177692276107968
+One normalization done... took 0.22 seconds.
+One set of parameters done. Took 1.85 seconds.
+Total time for one run was 2.07 seconds.
+--------
+4.228832056266268
+One normalization done... took 0.22 seconds.
+One set of parameters done. Took 1.90 seconds.
+Total time for one run was 2.11 seconds.
+--------
+4.228832069593841
+One normalization done... took 0.22 seconds.
+One set of parameters done. Took 1.82 seconds.
+Total time for one run was 2.05 seconds.
+--------
+4.228832056265079
+One normalization done... took 0.22 seconds.
+One set of parameters done. Took 1.86 seconds.
+Total time for one run was 2.08 seconds.
+--------
+4.22159539793103
+One normalization done... took 0.22 seconds.
+One set of parameters done. Took 1.90 seconds.
+Total time for one run was 2.12 seconds.
+--------
+4.221595411259153
+One normalization done... took 0.22 seconds.
+One set of parameters done. Took 1.86 seconds.
+Total time for one run was 2.07 seconds.
+--------
+4.2215953979302885
+One normalization done... took 0.22 seconds.
+One set of parameters done. Took 1.85 seconds.
+Total time for one run was 2.07 seconds.
+      fun: 1380360.0564724095
+ hess_inv: <2x2 LbfgsInvHessProduct with dtype=float64>
+      jac: array([-38.76630219, -32.29361011])
+  message: 'CONVERGENCE: REL_REDUCTION_OF_F_<=_FACTR*EPSMCH'
+     nfev: 33
+      nit: 4
+     njev: 11
+   status: 0
+  success: True
+        x: array([0.16632804, 0.72569752])
+Initial guess: [0.4, 1.0471975511965976]
+Expected result: (0.217, 0.7330382858376184)
+--- Took a total of 179.21358060836792 seconds ---
+Result for eta: 0.1663280368615967
+Yielding R = 0.907827308533186
+delta-phi = 0.7256975238972592 rad, or delta-phi = 41.57940532240715
+[[ 4.92085647e-05 -1.40404890e-05]
+ [-1.40404890e-05  1.36065294e-04]]
+Variance eta: 4.920856466556926e-05. Variance delta-phi: 0.0001360652942046627 (rad)
+benjamin@phy-eos:~/Documents/MLL-python$ /usr/bin/python3 /home/benjamin/Documents/MLL-python/3D/MLL_3D.py
+Reading input data...
+Finished reading.
+[0.999483, -0.67418]
+Number of measurement points: 1000000
+--- 1.205721139907837 seconds ---
+[0.350705, 0.492364]
+Number of random angles for normalization: 4950000
+--- 7.025704383850098 seconds ---
+Initial guess: [0.4, 1.0471975511965976]
+Optimizing...
+--------
+ok1
+ok2
+4.533010379639642
+One normalization done... took 7.75 seconds.
+One set of parameters done. Took 2.32 seconds.
+Total time for one run was 10.06 seconds.
+--------
+ok1
+ok2
+4.533010392967171
+One normalization done... took 7.89 seconds.
+One set of parameters done. Took 2.25 seconds.
+Total time for one run was 10.14 seconds.
+--------
+ok1
+ok2
+4.533010379638994
+One normalization done... took 7.43 seconds.
+One set of parameters done. Took 2.25 seconds.
+Total time for one run was 9.68 seconds.
+--------
+ok1
+ok2
+2.6672216199776666
+One normalization done... took 7.51 seconds.
+One set of parameters done. Took 2.25 seconds.
+Total time for one run was 9.76 seconds.
+--------
+ok1
+ok2
+2.667221645125209
+One normalization done... took 7.57 seconds.
+One set of parameters done. Took 2.26 seconds.
+Total time for one run was 9.83 seconds.
+--------
+ok1
+ok2
+2.6672216199776666
+One normalization done... took 7.80 seconds.
+One set of parameters done. Took 2.27 seconds.
+Total time for one run was 10.07 seconds.
+--------
+ok1
+ok2
+4.53296693468182
+One normalization done... took 7.65 seconds.
+One set of parameters done. Took 2.31 seconds.
+Total time for one run was 9.96 seconds.
+--------
+ok1
+ok2
+4.532966948010268
+One normalization done... took 7.41 seconds.
+One set of parameters done. Took 2.25 seconds.
+Total time for one run was 9.66 seconds.
+--------
+ok1
+ok2
+4.532966934681201
+One normalization done... took 7.77 seconds.
+One set of parameters done. Took 2.34 seconds.
+Total time for one run was 10.11 seconds.
+--------
+ok1
+ok2
+3.6001647030509165
+One normalization done... took 7.64 seconds.
+One set of parameters done. Took 2.38 seconds.
+Total time for one run was 10.02 seconds.
+--------
+ok1
+ok2
+3.60016471637898
+One normalization done... took 7.62 seconds.
+One set of parameters done. Took 2.26 seconds.
+Total time for one run was 9.88 seconds.
+--------
+ok1
+ok2
+3.6001647030525556
+One normalization done... took 7.45 seconds.
+One set of parameters done. Took 2.26 seconds.
+Total time for one run was 9.71 seconds.
+--------
+ok1
+ok2
+4.487805367548471
+One normalization done... took 7.39 seconds.
+One set of parameters done. Took 2.25 seconds.
+Total time for one run was 9.64 seconds.
+--------
+ok1
+ok2
+4.487805380876694
+One normalization done... took 7.39 seconds.
+One set of parameters done. Took 2.24 seconds.
+Total time for one run was 9.64 seconds.
+--------
+ok1
+ok2
+4.4878053675479945
+One normalization done... took 7.39 seconds.
+One set of parameters done. Took 2.24 seconds.
+Total time for one run was 9.63 seconds.
+--------
+ok1
+ok2
+2.6672216199776666
+One normalization done... took 7.36 seconds.
+One set of parameters done. Took 2.34 seconds.
+Total time for one run was 9.70 seconds.
+--------
+ok1
+ok2
+2.667221615834777
+One normalization done... took 7.92 seconds.
+One set of parameters done. Took 2.30 seconds.
+Total time for one run was 10.22 seconds.
+--------
+ok1
+ok2
+2.6672216199776666
+One normalization done... took 7.42 seconds.
+One set of parameters done. Took 2.39 seconds.
+Total time for one run was 9.81 seconds.
+--------
+ok1
+ok2
+3.854101743150969
+One normalization done... took 7.68 seconds.
+One set of parameters done. Took 2.34 seconds.
+Total time for one run was 10.02 seconds.
+--------
+ok1
+ok2
+3.854101756478825
+One normalization done... took 7.68 seconds.
+One set of parameters done. Took 2.32 seconds.
+Total time for one run was 10.01 seconds.
+--------
+ok1
+ok2
+3.8541017431501343
+One normalization done... took 7.71 seconds.
+One set of parameters done. Took 2.37 seconds.
+Total time for one run was 10.08 seconds.
+--------
+ok1
+ok2
+4.269414053011785
+One normalization done... took 7.67 seconds.
+One set of parameters done. Took 2.50 seconds.
+Total time for one run was 10.17 seconds.
+--------
+ok1
+ok2
+4.269414066340473
+One normalization done... took 7.40 seconds.
+One set of parameters done. Took 2.28 seconds.
+Total time for one run was 9.68 seconds.
+--------
+ok1
+ok2
+4.269414053011183
+One normalization done... took 7.46 seconds.
+One set of parameters done. Took 2.25 seconds.
+Total time for one run was 9.71 seconds.
+--------
+ok1
+ok2
+4.17644699362015
+One normalization done... took 7.47 seconds.
+One set of parameters done. Took 2.37 seconds.
+Total time for one run was 9.84 seconds.
+--------
+ok1
+ok2
+4.176447006947747
+One normalization done... took 7.87 seconds.
+One set of parameters done. Took 2.39 seconds.
+Total time for one run was 10.25 seconds.
+--------
+ok1
+ok2
+4.176446993619244
+One normalization done... took 7.40 seconds.
+One set of parameters done. Took 2.25 seconds.
+Total time for one run was 9.64 seconds.
+--------
+ok1
+ok2
+4.228225223175921
+One normalization done... took 7.37 seconds.
+One set of parameters done. Took 2.25 seconds.
+Total time for one run was 9.62 seconds.
+--------
+ok1
+ok2
+4.228225236504077
+One normalization done... took 7.38 seconds.
+One set of parameters done. Took 2.26 seconds.
+Total time for one run was 9.64 seconds.
+--------
+ok1
+ok2
+4.228225223175192
+One normalization done... took 7.38 seconds.
+One set of parameters done. Took 2.25 seconds.
+Total time for one run was 9.62 seconds.
+--------
+ok1
+ok2
+4.2212480175305584
+One normalization done... took 7.39 seconds.
+One set of parameters done. Took 2.25 seconds.
+Total time for one run was 9.63 seconds.
+--------
+ok1
+ok2
+4.221248030858302
+One normalization done... took 7.41 seconds.
+One set of parameters done. Took 2.25 seconds.
+Total time for one run was 9.65 seconds.
+--------
+ok1
+ok2
+4.221248017529387
+One normalization done... took 7.38 seconds.
+One set of parameters done. Took 2.26 seconds.
+Total time for one run was 9.64 seconds.
+      fun: 1380361.5282739927
+ hess_inv: <2x2 LbfgsInvHessProduct with dtype=float64>
+      jac: array([-52.75942388, -56.34501548])
+  message: 'CONVERGENCE: REL_REDUCTION_OF_F_<=_FACTR*EPSMCH'
+     nfev: 33
+      nit: 4
+     njev: 11
+   status: 0
+  success: True
+        x: array([0.1660674 , 0.72325418])
+Initial guess: [0.4, 1.0471975511965976]
+Expected result: (0.217, 0.7330382858376184)
+--- Took a total of 332.24229288101196 seconds ---
+Result for eta: 0.16606740101068357
+Yielding R = 0.9080706747762509
+delta-phi = 0.7232541783670422 rad, or delta-phi = 41.43941193563356
+[[ 4.98078351e-05 -1.52516004e-05]
+ [-1.52516004e-05  1.37346391e-04]]
+Variance eta: 4.98078350613261e-05. Variance delta-phi: 0.0001373463912957824 (rad)

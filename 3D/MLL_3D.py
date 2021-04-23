@@ -4,13 +4,13 @@ import math  # NOTE: what do I need? Pi? anything else?
 import os    # TODO: Only import neccesary modules.
 import time
 import numpy as np
-from scipy import optimize
-from scipy import integrate
+from scipy import optimize      # requires download
+from scipy import integrate     # requires download
 from matplotlib import pyplot as plt
 #from scipy.sparse import csc_matrix as csc
 
 ###### THEORY ######
-alpha = 0.753   # assumed.
+alpha = 0.754   # assumed.  Had 0.753 before, which stood in formalism_viktor.pdf
 
 F0 = lambda cos_th, cos_thP : 1
 F1 = lambda cos_th, cos_thP : math.sin(math.acos(cos_th)) * cos_th * cos_thP
@@ -23,8 +23,8 @@ def WSingleTag(eta, delta_phi, xi):
 def WSingleTagIntegrable(eta, delta_phi):
     '''Returns a function to integrate with defined parameters. Requiered format for scipy.integrate. \n
     Returned function depends only on xi.'''
-
-    # xi is packed and then unpacked.
+    #              |  see *xi vs xi
+    # xi is packed V  and then unpacked.
     return (lambda *xi : F0(*xi) + eta * F2(*xi) + alpha * (1 - eta**2)**(0.5) * math.sin(delta_phi) * F1(*xi)  )
 
 def WSingleTagIntegrableMap(eta, delta_phi):
@@ -176,6 +176,7 @@ def main():
     print(f"Yielding R = {R}")
     print(f"delta-phi = {dphi_res} rad, or delta-phi = {dphi_res*180/math.pi}")
     hess = (res['hess_inv']).todense()
+    print("Inverse Hessian:")
     print(hess)
     print(f'Variance eta: {hess[0][0]}. Variance delta-phi: {hess[1][1]} (rad)')
 
