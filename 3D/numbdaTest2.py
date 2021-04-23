@@ -33,8 +33,7 @@ F1 = lambda cos_th, cos_thP : math.sin(math.acos(cos_th)) * cos_th * cos_thP
 F2 = lambda cos_th, cos_thP : (cos_th)**2
 
 @jit(nopython=True)
-def WSingleTag(eta, delta_phi, xi):
-    cos_th, cos_thP = xi
+def WSingleTag(eta, delta_phi, cos_th, cos_thP):
     '''Normalize this to get the PDF we want to optimize. Xi is the set of angles, packed as a list/tuple/...'''
     return 1 + eta * (cos_th)**2 + alpha * (1 - eta**2)**(0.5) * np.sin(delta_phi) \
             * np.sin(np.arccos(cos_th)) * cos_th * cos_thP  # W function
@@ -57,8 +56,7 @@ def MCintegralNum(eta, delta_phi, uniformAngles):
     n = 0.0   # number of points
     for xi in uniformAngles: # point is a 2D list
         cos_th, cos_thP = xi
-        s += 1 + eta * (cos_th)**2 + alpha * (1 - eta**2)**(0.5) * np.sin(delta_phi) \
-            * np.sin(np.arccos(cos_th)) * cos_th * cos_thP
+        s += WSingleTag(eta, delta_phi, cos_th, cos_thP)
         n += 1
     return 1/n * s * (2)**2    # MC-integral
 #####
