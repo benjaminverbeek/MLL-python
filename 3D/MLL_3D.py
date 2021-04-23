@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 #from scipy.sparse import csc_matrix as csc
 
 ###### THEORY ######
-alpha = 0.754   # assumed.  Had 0.753 before, which stood in formalism_viktor.pdf
+alpha = 0.754   # assumed.  # obs skrev 0.753 förut
 
 F0 = lambda cos_th, cos_thP : 1
 F1 = lambda cos_th, cos_thP : math.sin(math.acos(cos_th)) * cos_th * cos_thP
@@ -30,7 +30,6 @@ def WSingleTagIntegrable(eta, delta_phi):
 def WSingleTagIntegrableMap(eta, delta_phi):
     '''Returns a function to integrate with defined parameters. Requiered format for scipy.integrate. \n
     Returned function depends only on xi.'''
-
     # "xi is packed and then unpacked."   # CHANGED: only change to above is not packing first.
     return (lambda xi : F0(*xi) + eta * F2(*xi) + alpha * (1 - eta**2)**(0.5) * math.sin(delta_phi) * F1(*xi)  )
 
@@ -146,7 +145,7 @@ def main():
     # Variables eta, delta-phi
     initial_guess = [0.4, 60*math.pi/180]
     print(f"Initial guess: {initial_guess}")
-    bnds = ((-1,1),(-7,7))   # bounds on variables
+    bnds = ((-1,1),(-7,7))   # bounds on parameters
     q = 2.396 # GeV, reaction energy (momentum transfer)
     mLambda = 1.115683 # GeV, mass of lambda baryon (from PDG-live)
     tau = q**2/(4*mLambda**2)   # form factor #tau = 1.15442015725 # Viktors värde? #tau = 1.1530071615814588 # mitt beräknade 
