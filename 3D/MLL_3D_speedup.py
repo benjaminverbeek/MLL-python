@@ -15,7 +15,6 @@ import numpy as np              # requires download, e.g. "$ pip3 install numpy"
 from scipy import optimize      # requires download, e.g. "$ pip3 install scipy". For optimization of LL.
 import numba                    # requires download, e.g. "$ pip3 install numba". For efficient execution.
 from numba import jit           # numba
-from numba.typed import List    # numba
 ##### END IMPORTS #####
 
 alpha = 0.754   # assumed.  Had 0.753 before, which stood in formalism_viktor.pdf
@@ -95,32 +94,23 @@ def main():
 
     ########## READ DATA: ##########
     # Read angle distribution data. Becomes python list of numba-lists
-    #xi_set = [ List(list(map(float,i.split()))) for i in open(angleDistributionData_filename).readlines() ]    # list (of numba lists)
-    xi_set = List()
-    for i in open(angleDistributionData_filename).readlines():
-        xi_set.append(List(map(float,i.split())))   # split line into str's, convert str->float, convert map->List
+    xi_set = [ list(map(float,i.split())) for i in open(angleDistributionData_filename).readlines() ]    # list (of numba lists)
+    # Iterate thru lines of datafile, for each line, split it into list of number contents,
+    # map the content of that list from str -> float, convert map object -> list, all in list comprehension.
+    xi_set = np.asarray(xi_set) # converts to numpy.array. Much faster than numba typed list.
 
     print("Finished reading.")
     print(xi_set[0])
     print(f"Number of measurement points: {len(xi_set)}")
-    #print("Converting to numba list...")
-    #xi_set = List(xi_set) # conversion needed for numba handling. I think lists break things (converting back and forth).
     print("DONE")
     t2 = time.time()
     print(f"--- {(time.time() - start_time):.3f} seconds ---")
 
     # Read normalization data
-    # NOTE: Almost as fast one-line alternative:       # TODO: How can I speed this up?
-    #normalizationAngles = [ List(map(float,i.split())) for i in open(normalizationData_filename).readlines() ]    # list (of numba lists) 
-    # NOTE: In numbda List format.
-    normalizationAngles = List()
-    for i in open(normalizationData_filename).readlines():
-        normalizationAngles.append(List(map(float,i.split())))  # SO SLOW!
-    #print("Converting to numba list...")
-    print(normalizationAngles[0])
-    #normalizationAngles = List(normalizationAngles)   # conversion needed for numba handling. I think unpacking breaks things.
-    # conversion and list comprehension w List() takes a LONG time (abt 100 s for 5 million points)
+    normalizationAngles = [ list(map(float,i.split())) for i in open(normalizationData_filename).readlines() ]    # list (of numba lists) 
+    normalizationAngles = np.asarray(normalizationAngles)
 
+    print(normalizationAngles[0])
     print(f"Number of random angles for normalization: {len(normalizationAngles)}")
     # NOTE: The normalization angles are not angles but rather cos(angles).
     print(f"--- {(time.time() - t2):.3f} seconds for normalization data ---")
@@ -165,6 +155,7 @@ def main():
 
 if __name__ == "__main__":  # doesn't run if imported.
     main()
+
 
 
 # EXAMPLE OF RUN:   (ran on office Linux/ubuntu machine)
