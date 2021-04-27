@@ -2,8 +2,7 @@
 # Program to make 3D fit (Actually simplifies to 2D)    #
 # Benjamin Verbeek, 2021-04-23                          #
 # Updated functions to work with numba, now executes    #
-# very fast. Slow part is reading input and converting  #
-# to numbda lists.                                      #
+# very fast.                                            #
 # NOTE: Multithread input? Could work.                  #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -14,12 +13,16 @@ import time                     # for timing, comes with Python
 import numpy as np              # requires download, e.g. "$ pip3 install numpy". For scipy and efficient funcs.
 from scipy import optimize      # requires download, e.g. "$ pip3 install scipy". For optimization of LL.
 import numba                    # requires download, e.g. "$ pip3 install numba". For efficient execution.
-from numba import jit           # numba
+from numba import jit, prange           # numba
 ##### END IMPORTS #####
 
-alpha = 0.754   # assumed.  Had 0.753 before, which stood in formalism_viktor.pdf
+# Set some parameters for the fit.
+alpha = 0.754   # assumed. Global variable.  Had 0.753 before, which stood in formalism_viktor.pdf
 angleDistributionData_filename = "lAngles.txt"  # specify path if not in same folder.
 normalizationData_filename = "lPHSP_4Pi.txt"
+numberedInput = False        # Is one column of the input data just numbering? Specify that here.
+
+numberedInput = int(numberedInput)  # True - 1, False - 0. This is how many colums to skip in indata files. Can be specified manually further down.
 
 ###### THEORY ######
 @jit(nopython=True) # Applies numba magic. nopython=True doesn't appear to make a difference but is apparently recommended.
@@ -44,6 +47,26 @@ def MCintegralNum(eta, delta_phi, uniformAngles):
     return 1/n * s * 2*2    # MC-integral: average value of function * area 
                             # (2*2, since cos has range [-1,1]). This area-constant does not affect results.
 ##### END MC INTEGRATOR #####
+'''
+# Iterative Log-likelihood. Separate func so numba can optimize it. # TODO: Try at work. 64-bit?
+@jit(nopython=True, parallel=True)
+def iterativeLL(par, var):
+    s = 0  # sum
+    eta, delta_phi = par
+    for i in prange(len(var)): # iterate over samples of xi
+        cos_th, cos_thP = var[i]
+        s -= np.log(WSingleTagNum(eta, delta_phi, cos_th, cos_thP)) # log-sum of pdf gives LL. Negative so we minimize.
+    return s
+'''
+@jit(nopython=True)
+def iterativeLL(par, var):  # a separate function so numba can optimize it.
+    s = 0  # sum
+    eta, delta_phi = par
+    for v in var: # iterate over samples of xi
+        cos_th, cos_thP = v
+        s -= np.log(WSingleTagNum(eta, delta_phi, cos_th, cos_thP)) # log-sum of pdf gives LL. Negative so we minimize.
+    return s
+
 
 # Generalized LL-func.: send in a pdf too, and let par be n-dim, dataset var X be m-dim.
 def negLogLikelihood(par, var, pdf, normalizeSeparately=False, normalizationAngles=[]):
@@ -69,14 +92,6 @@ def negLogLikelihood(par, var, pdf, normalizeSeparately=False, normalizationAngl
     else:
         normalization = 1
     
-    @jit(nopython=True)
-    def iterativeLL(par, var):  # a separate function so numba can optimize it.
-        s = 0  # sum
-        eta, delta_phi = par
-        for v in var: # iterate over samples of xi
-            cos_th, cos_thP = v
-            s -= np.log(WSingleTagNum(eta, delta_phi, cos_th, cos_thP)) # log-sum of pdf gives LL. Negative so we minimize.
-        return s
     r = iterativeLL(par,var) + len(var)*np.log(normalization) # normalize after; -log(W_i/norm) = -log(W_i) + log(norm) 
     
     t3 = time.time()
@@ -94,9 +109,10 @@ def main():
 
     ########## READ DATA: ##########
     # Read angle distribution data. Becomes python list of numba-lists
-    xi_set = [ list(map(float,i.split())) for i in open(angleDistributionData_filename).readlines() ]    # list (of numba lists)
+    xi_set = [ list(map(float,i.split()))[numberedInput:] for i in open(angleDistributionData_filename).readlines() ]    # list (of lists)
     # Iterate thru lines of datafile, for each line, split it into list of number contents,
-    # map the content of that list from str -> float, convert map object -> list, all in list comprehension.
+    # map the content of that list from str -> float, convert map object -> list, 
+    # skip first if it is numbered input, all in list comprehension.
     xi_set = np.asarray(xi_set) # converts to numpy.array. Much faster than numba typed list.
 
     print("Finished reading.")
@@ -104,11 +120,11 @@ def main():
     print(f"Number of measurement points: {len(xi_set)}")
     print("DONE")
     t2 = time.time()
-    print(f"--- {(time.time() - start_time):.3f} seconds ---")
+    print(f"--- {(t2 - start_time):.3f} seconds ---")
 
     # Read normalization data
-    normalizationAngles = [ list(map(float,i.split())) for i in open(normalizationData_filename).readlines() ]    # list (of numba lists) 
-    normalizationAngles = np.asarray(normalizationAngles)
+    normalizationAngles = [ list(map(float,i.split()))[numberedInput:] for i in open(normalizationData_filename).readlines() ]    # list (of lists) 
+    normalizationAngles = np.asarray(normalizationAngles) # needed for numba. Fix datatype.
 
     print(normalizationAngles[0])
     print(f"Number of random angles for normalization: {len(normalizationAngles)}")
@@ -130,7 +146,7 @@ def main():
 
     print("Optimizing...")
     # scipy existing minimizing function. 
-    res = optimize.minimize(negLogLikelihood, initial_guess, (xi_set[0:-1], WSingleTagNum, True, normalizationAngles[0:-1]), tol=tolerance, bounds=bnds)
+    res = optimize.minimize(negLogLikelihood, initial_guess, (xi_set[0:], WSingleTagNum, True, normalizationAngles[0:]), tol=tolerance, bounds=bnds)
     ########## END OPTIMIZE ##########
 
     ########## PRESENT RESULTS: ##########
