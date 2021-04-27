@@ -51,43 +51,42 @@ def F6(th,th1,th2,ph1,ph2): return np.cos(th1) * np.cos(th2) - (np.sin(th))**2 *
 @jit(nopython=True) # Applies numba magic. nopython=True doesn't appear to make a difference but is apparently recommended.
 def WDoubleTag(alpha,dPhi,alpha1,alpha2 , th,th1,th2,ph1,ph2):
     xi = (th,th1,th2,ph1,ph2)
-    print(xi)
     '''Normalize this to get the PDF to optimize. W is the function from theory (Fäldt, Kupsc)'''
     # https://arxiv.org/pdf/1702.07288.pdf
     return F0(*xi) + alpha*F5(*xi) \
         + alpha1*alpha2 * (F1(*xi) + ((1-alpha**2)**0.5) * np.cos(dPhi) * F2(*xi) + alpha*F6(*xi)) \
-        + ((1-alpha**2)**0.5) * np.sin(dPhi) * (alpha1*F3(*xi) + alpha2*F4(*xi))
+        + ((1-alpha**2)**0.5) * np.sin(dPhi) * (alpha1*F3(*xi) + alpha2*F4(*xi))    # W function
 
 ##### END THEORY #####
-
-print(WDoubleTag(0.460, 0.740, 0.754, -0.754 , 0,0,0,0,0))
 
 ##### MC INTEGRATOR #####
 # MC-integrator for normalization factors
 @jit(nopython=True) # numba decorator. Significantly improves performance (~factor 100)
-def MCintegralNum(eta, delta_phi, uniformAngles):
+def MCintegral(alpha,dPhi,alpha1,alpha2, uniformAngles):
     """Monte Carlo integration for normalization, for given parameters and a set of normalization angles."""
     s = 0.0   # sum
     n = 0.0   # number of points
-    for xi in uniformAngles: # xi is a 2D list
-        cos_th, cos_thP = xi
-        s += WSingleTagNum(eta, delta_phi, cos_th, cos_thP) # evaluate W at a bunch of random points and sum.
+    for xi in uniformAngles: # xi is a 5D list
+        th,th1,th2,ph1,ph2 = xi
+        s += WDoubleTag(alpha,dPhi,alpha1,alpha2 , th,th1,th2,ph1,ph2) # evaluate W at a bunch of random points and sum.
         n += 1  # count number of points. Could also use len(uniformAngles)
-    return 1/n * s * 2*2    # MC-integral: average value of function * area 
+    return 1/n * s * 2**5    # MC-integral: average value of function * area # NOTE: area is wrong for 5D but results should be same.
                             # (2*2, since cos has range [-1,1]). This area-constant does not affect results.
 ##### END MC INTEGRATOR #####
+
+## HERE 
 
 @jit(nopython=True)
 def iterativeLL(par, var):  # a separate function so numba can optimize it.
     s = 0  # sum
-    eta, delta_phi = par    # TODO
+    alpha,dPhi,alpha1,alpha2 = par    # TODO
     for v in var: # iterate over samples of xi
-        cos_th, cos_thP = v # TODO
-        s -= np.log(WSingleTagNum(eta, delta_phi, cos_th, cos_thP)) # log-sum of pdf gives LL. Negative so we minimize.
+        th,th1,th2,ph1,ph2 = v # TODO
+        s -= np.log(WDoubleTag(alpha,dPhi,alpha1,alpha2 , th,th1,th2,ph1,ph2)) # log-sum of pdf gives LL. Negative so we minimize.
     return s
 
 # Generalized LL-func.: send in a pdf too, and let par be n-dim, dataset var X be m-dim.
-def negLogLikelihood(par, var, pdf, normalizeSeparately=False, normalizationAngles=[]):
+def negLL(par, var, pdf, normalizeSeparately=False, normalizationAngles=[]):
     '''Minimize this function for decay parameters to find max of Log-Likelihood for distribution. \n
     par : decay parameters to maximize [list], N-dim \n
     var : dataset of variables (xi) [list of lists] M-dim (NOTE: the inner lists represent observed points, i.e. 
@@ -103,7 +102,7 @@ def negLogLikelihood(par, var, pdf, normalizeSeparately=False, normalizationAngl
 
     print("--------")
     if normalizeSeparately==True:
-        normalization = MCintegralNum(*par, normalizationAngles)
+        normalization = MCintegral(*par, normalizationAngles)
         print(normalization)
         t2 = time.time()
         print(f"One normalization done... took {t2 - t1:.5f} seconds.")
@@ -152,37 +151,42 @@ def main():
     ########## END READ DATA ##########
 
     ########## OPTIMIZE: ##########
-    # Generated data with R=0.91 and delta_phi = 42 deg (0.733 rad)
-    # Variables eta, delta-phi
-    initial_guess = [0.4, 60*PI/180]
+    #  input parametervärden 1, 2, 3, 4 = 0.460, 0.740, 0.754, -0.754
+    # Variables alpha, dPhi, alpha1, alpha2
+    initial_guess = [0.4, 0.7, 0.6, -0.6]
     print(f"Initial guess: {initial_guess}")
-    bnds = ((-1,1),(-7,7))   # bounds on variables. NOTE: The (-7,7) bound on dPhi is pretty arbitrary.
-    q = 2.396 # GeV, reaction energy (momentum transfer)
-    mLambda = 1.115683 # GeV, mass of lambda baryon (from PDG-live)
-    tau = q**2/(4*mLambda**2)   # form factor #tau = 1.15442015725 # Viktors värde? #tau = 1.1530071615814588 # mitt beräknade 
+    bnds = ((-1,1),(-7,7),(-7,7),(-7,7))   # bounds on variables. NOTE: The (-7,7) bound on last 3 is pretty arbitrary.
+    #q = 2.396 # GeV, reaction energy (momentum transfer)
+    #mLambda = 1.115683 # GeV, mass of lambda baryon (from PDG-live)
+    #tau = q**2/(4*mLambda**2)   # form factor #tau = 1.15442015725 # Viktors värde? #tau = 1.1530071615814588 # mitt beräknade 
     tolerance = 10**-6
 
     print("Optimizing...")
     # scipy existing minimizing function. 
-    res = optimize.minimize(negLogLikelihood, initial_guess, (xi_set[0:], WSingleTagNum, True, normalizationAngles[0:]), tol=tolerance, bounds=bnds)
+    res = optimize.minimize(negLL, initial_guess, (xi_set[0:], WDoubleTag, True, normalizationAngles[0:]), tol=tolerance, bounds=bnds)
     ########## END OPTIMIZE ##########
 
     ########## PRESENT RESULTS: ##########
     print(res)  # scipy default result structure
     print(f"------ TOOK A TOTAL OF {time.time() - start_time:.3f} SECONDS ------")
     print(f"Initial guess: \t\t {initial_guess}")
-    print(f"Expected result: \t {(0.217, 42*PI/180)}") # input to generate data, according to Viktor
-    eta_res = res['x'][0]
+    print(f"Expected result: \t {(0.460, 0.740, 0.754, -0.754)}") # input to generate data, according to Viktor
+    alpha_res = res['x'][0]
     dphi_res = res['x'][1]
-    print(f"Result for eta: \t {eta_res}")
-    R = tau**(0.5) * ((1-eta_res)/(1+eta_res))**(0.5)   # according to formalism
-    print(f"Yielding R = {R}")
+    alpha1_res = res['x'][2]
+    alpha2_res = res['x'][3]
+    print(f"Result for alpha: \t {alpha_res}")
+    #R = tau**(0.5) * ((1-eta_res)/(1+eta_res))**(0.5)   # according to formalism
+    #print(f"Yielding R = {R}")
     print(f"delta-phi = {dphi_res} rad, or delta-phi = {dphi_res*180/PI} deg")
+    print(f"Result for alpha1: \t {alpha1_res}")
+    print(f"Result for alpha2: \t {alpha2_res}")
+    
     print("")
     hess = (res['hess_inv']).todense()
     print("Inverse Hessian:")
     print(hess)
-    print(f'Variance eta: \t\t {hess[0][0]} \nVariance delta-phi: \t {hess[1][1]} (rad)')
+    print(f'Variance alpha: \t\t {hess[0][0]} \nVariance delta-phi: \t {hess[1][1]} (rad)')
     ########## END PRESENT RESULTS ##########
 
 ########## END MAIN ##########
