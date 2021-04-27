@@ -116,7 +116,7 @@ def main():
     xi_set = np.asarray(xi_set) # converts to numpy.array. Much faster than numba typed list.
 
     print("Finished reading.")
-    print(xi_set[0])
+    print(xi_set[-1])
     print(f"Number of measurement points: {len(xi_set)}")
     print("DONE")
     t2 = time.time()
@@ -126,7 +126,7 @@ def main():
     normalizationAngles = [ list(map(float,i.split()))[numberedInput:] for i in open(normalizationData_filename).readlines() ]    # list (of lists) 
     normalizationAngles = np.asarray(normalizationAngles) # needed for numba. Fix datatype.
 
-    print(normalizationAngles[0])
+    print(normalizationAngles[-1])
     print(f"Number of random angles for normalization: {len(normalizationAngles)}")
     # NOTE: The normalization angles are not angles but rather cos(angles).
     print(f"--- {(time.time() - t2):.3f} seconds for normalization data ---")
