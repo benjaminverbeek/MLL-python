@@ -160,30 +160,24 @@ def main():
     # Variables alpha, dPhi, alpha1, alpha2
     initial_guess = [0.20, 0.30, 0.34, -0.34]
     print(f"Initial guess: {initial_guess}")
-    bnds = ((-1,1),(-0,7),(-1,1),(-1,1))   # bounds on variables. NOTE: What should they be?
-    #q = 2.396 # GeV, reaction energy (momentum transfer)
-    #mLambda = 1.115683 # GeV, mass of lambda baryon (from PDG-live)
-    #tau = q**2/(4*mLambda**2)   # form factor #tau = 1.15442015725 # Viktors värde? #tau = 1.1530071615814588 # mitt beräknade 
-    tolerance = 10**-5
+    bnds = ((-1,1),(-PI,PI),(-1,1),(-1,1))   # bounds on variables. NOTE: What should they be?
     ops = {'disp': None, 'maxcor': 10, 'ftol': 2.220446049250313e-09, 'gtol': 1e-05, 'eps': 1e-08, 'maxfun': 15000, 'maxiter': 15000, 'iprint': - 1, 'maxls': 20, 'finite_diff_rel_step': None}
-
+    tolerance = 10**-4
     print("Optimizing...")
     # scipy existing minimizing function. 
-    res = optimize.minimize(negLL, initial_guess, (xi_set[0:], WDoubleTag, True, normalizationAngles[0:]), tol=tolerance, method='L-BFGS-B',  bounds=bnds)#, options=ops)
+    res = optimize.minimize(negLL, initial_guess, (xi_set[0:], WDoubleTag, True, normalizationAngles[0:]), tol=tolerance, bounds=bnds)#, method='L-BFGS-B')#, options=ops)
     ########## END OPTIMIZE ##########
 
     ########## PRESENT RESULTS: ##########
     print(res)  # scipy default result structure
     print(f"------ TOOK A TOTAL OF {time.time() - start_time:.3f} SECONDS ------")
     print(f"Initial guess: \t\t {initial_guess}")
-    print(f"Expected result: \t {(0.460, 0.740, 0.754, -0.754)}") # input to generate data, according to Viktor
+    print(f"Expected result: \t {(0.460, 0.740, 0.754, -0.754)}") # input to generate data, according to Patrik
     alpha_res = res['x'][0]
     dphi_res = res['x'][1]
     alpha1_res = res['x'][2]
     alpha2_res = res['x'][3]
     print(f"Result for alpha: \t {alpha_res}")
-    #R = tau**(0.5) * ((1-eta_res)/(1+eta_res))**(0.5)   # according to formalism
-    #print(f"Yielding R = {R}")
     print(f"delta-phi = {dphi_res} rad, or delta-phi = {dphi_res*180/PI} deg")
     print(f"Result for alpha1: \t {alpha1_res}")
     print(f"Result for alpha2: \t {alpha2_res}")
@@ -192,7 +186,7 @@ def main():
     hess = (res['hess_inv']).todense()
     print("Inverse Hessian:")
     print(hess)
-    print(f'Variance alpha: \t\t {hess[0][0]} \nVariance delta-phi: \t {hess[1][1]} (rad)')
+    print(f'Variance alpha: \t {hess[0][0]} \nVariance delta-phi: \t {hess[1][1]} (rad)')
     ########## END PRESENT RESULTS ##########
 
 ########## END MAIN ##########
