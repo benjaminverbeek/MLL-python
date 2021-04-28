@@ -28,8 +28,8 @@ numberedInput = int(numberedInput)  # True - 1, False - 0. This is how many colu
 def F0(th,th1,th2,ph1,ph2): return 1
 
 @jit(nopython=True)
-def F1(th,th1,th2,ph1,ph2): return (np.sin(th))**2 * np.sin(th1) * np.sin(th2) * \
-            np.cos(ph1) * np.cos(ph2) + (np.cos(th))**2 * np.cos(th1) * np.cos(th2)
+def F1(th,th1,th2,ph1,ph2): return ( (np.sin(th))**2 * np.sin(th1) * np.sin(th2) * \
+            np.cos(ph1) * np.cos(ph2) + (np.cos(th))**2 * np.cos(th1) * np.cos(th2) )
 
 @jit(nopython=True)
 def F2(th,th1,th2,ph1,ph2): return np.sin(th) * np.cos(th) * (np.sin(th1) * np.cos(th2) * \
@@ -57,6 +57,13 @@ def WDoubleTag(alpha,dPhi,alpha1,alpha2 , th,th1,th2,ph1,ph2):
         + alpha1*alpha2 * (F1(*xi) + ((1-alpha**2)**0.5) * np.cos(dPhi) * F2(*xi) + alpha*F6(*xi)) \
         + ((1-alpha**2)**0.5) * np.sin(dPhi) * (alpha1*F3(*xi) + alpha2*F4(*xi))    # W function
 
+@jit(nopython=True) # Applies numba magic. nopython=True doesn't appear to make a difference but is apparently recommended.
+def WDoubleTag2(alpha,dPhi,alpha1,alpha2 , th,th1,th2,ph1,ph2):
+    xi = (th,th1,th2,ph1,ph2)
+    '''Normalize this to get the PDF to optimize. W is the function from theory (Fäldt, Kupsc)'''
+    # https://arxiv.org/pdf/1702.07288.pdf
+    return alpha1*alpha2 * ((np.sin(th))**2 * np.sin(th1)*np.sin(th2)*np.cos(ph1)*np.cos(ph2) + (np.cos(th))**2 * np.cos(th1)*np.cos(th2) + (1-alpha**2)**0.5 * np.cos(dPhi) * np.sin(th) * np.cos(th) * (np.sin(th1)*np.cos(th2)*np.cos(ph1) + np.cos(th1)*np.sin(th2)*np.cos(ph2)) + alpha*(np.cos(th1)*np.cos(th2) - (np.sin(th))**2 * np.sin(th1)*np.sin(th2)*np.sin(ph1)*np.sin(ph2))) + alpha1 * (1-alpha**2)**0.5 * np.sin(dPhi)*np.sin(th)*np.cos(th)*np.sin(th1)*np.sin(ph1) + alpha2 * (1-alpha**2)**0.5 * np.sin(dPhi) * np.sin(th)*np.cos(th)*np.sin(th2)*np.sin(ph2) + alpha*(np.cos(th))**2 + 1                                                                                          
+
 ##### END THEORY #####
 
 ##### MC INTEGRATOR #####
@@ -70,18 +77,16 @@ def MCintegral(alpha,dPhi,alpha1,alpha2, uniformAngles):
         th,th1,th2,ph1,ph2 = xi
         s += WDoubleTag(alpha,dPhi,alpha1,alpha2 , th,th1,th2,ph1,ph2) # evaluate W at a bunch of random points and sum.
         n += 1  # count number of points. Could also use len(uniformAngles)
-    return 1/n * s * 2**5    # MC-integral: average value of function * area # NOTE: area is wrong for 5D but results should be same.
-                            # (2*2, since cos has range [-1,1]). This area-constant does not affect results.
+    return 1/n * s * (2*PI)**5    # MC-integral: average value of function * area # NOTE: area is wrong for 5D but results should be same?
+                            # (2**5, since cos has range [-1,1]). This area-constant does not affect results.
 ##### END MC INTEGRATOR #####
-
-## HERE 
 
 @jit(nopython=True)
 def iterativeLL(par, var):  # a separate function so numba can optimize it.
     s = 0  # sum
-    alpha,dPhi,alpha1,alpha2 = par    # TODO
+    alpha,dPhi,alpha1,alpha2 = par
     for v in var: # iterate over samples of xi
-        th,th1,th2,ph1,ph2 = v # TODO
+        th,th1,th2,ph1,ph2 = v 
         s -= np.log(WDoubleTag(alpha,dPhi,alpha1,alpha2 , th,th1,th2,ph1,ph2)) # log-sum of pdf gives LL. Negative so we minimize.
     return s
 
@@ -153,17 +158,18 @@ def main():
     ########## OPTIMIZE: ##########
     #  input parametervärden 1, 2, 3, 4 = 0.460, 0.740, 0.754, -0.754
     # Variables alpha, dPhi, alpha1, alpha2
-    initial_guess = [0.4, 0.7, 0.6, -0.6]
+    initial_guess = [0.20, 0.30, 0.34, -0.34]
     print(f"Initial guess: {initial_guess}")
-    bnds = ((-1,1),(-7,7),(-7,7),(-7,7))   # bounds on variables. NOTE: The (-7,7) bound on last 3 is pretty arbitrary.
+    bnds = ((-1,1),(-0,7),(-1,1),(-1,1))   # bounds on variables. NOTE: What should they be?
     #q = 2.396 # GeV, reaction energy (momentum transfer)
     #mLambda = 1.115683 # GeV, mass of lambda baryon (from PDG-live)
     #tau = q**2/(4*mLambda**2)   # form factor #tau = 1.15442015725 # Viktors värde? #tau = 1.1530071615814588 # mitt beräknade 
-    tolerance = 10**-6
+    tolerance = 10**-5
+    ops = {'disp': None, 'maxcor': 10, 'ftol': 2.220446049250313e-09, 'gtol': 1e-05, 'eps': 1e-08, 'maxfun': 15000, 'maxiter': 15000, 'iprint': - 1, 'maxls': 20, 'finite_diff_rel_step': None}
 
     print("Optimizing...")
     # scipy existing minimizing function. 
-    res = optimize.minimize(negLL, initial_guess, (xi_set[0:], WDoubleTag, True, normalizationAngles[0:]), tol=tolerance, bounds=bnds)
+    res = optimize.minimize(negLL, initial_guess, (xi_set[0:], WDoubleTag, True, normalizationAngles[0:]), tol=tolerance, method='L-BFGS-B',  bounds=bnds)#, options=ops)
     ########## END OPTIMIZE ##########
 
     ########## PRESENT RESULTS: ##########
