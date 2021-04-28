@@ -4,6 +4,7 @@
 # Updated functions to work with numba, now executes    #
 # very fast. Slow part is reading input and converting  #
 # to numbda lists.                                      #
+# NOTE: Currently non-functional.                       #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 ##### IMPORTS #####
@@ -20,6 +21,7 @@ from numba import jit           # numba
 angleDistributionData_filename = "mcsig100k_JPsi_LLbar.dat"  # specify path if not in same folder.
 normalizationData_filename = "mcphsp1000k_JPsi_LLbar.dat"
 numberedInput = True        # Is one column of the input data just numbering? Specify that here.
+initial_guess = [0.46, -0.74, 0.754, -0.754]
 
 numberedInput = int(numberedInput)  # True - 1, False - 0. This is how many colums to skip in indata files. Can be specified manually further down.
 
@@ -108,7 +110,7 @@ def negLL(par, var, pdf, normalizeSeparately=False, normalizationAngles=[]):
     print("--------")
     if normalizeSeparately==True:
         normalization = MCintegral(*par, normalizationAngles)
-        print(normalization)
+        #print(normalization)
         t2 = time.time()
         print(f"One normalization done... took {t2 - t1:.5f} seconds.")
     else:
@@ -117,6 +119,7 @@ def negLL(par, var, pdf, normalizeSeparately=False, normalizationAngles=[]):
     r = iterativeLL(par,var) + len(var)*np.log(normalization) # normalize after; -log(W_i/norm) = -log(W_i) + log(norm) 
     
     t3 = time.time()
+    print(f"LL: \t {r}")
     print(f"One set of parameters done. Took {t3 - t2:.5f} seconds.")    # takes a long time but not AS long as normalization.
     print(f"Total time for one run was {t3 - t1:.5f} seconds.")
     return r
@@ -125,6 +128,7 @@ def negLL(par, var, pdf, normalizeSeparately=False, normalizationAngles=[]):
 
 ########## MAIN: ########## 
 def main():
+    global initial_guess    # reference the globally defined one. NOTE: DANGEROUS FOR IMPORTS!!!
 
     start_time = time.time()
     print("Reading input data... \t (this might take a minute)")
@@ -158,10 +162,11 @@ def main():
     ########## OPTIMIZE: ##########
     #  input parametervärden 1, 2, 3, 4 = 0.460, 0.740, 0.754, -0.754
     # Variables alpha, dPhi, alpha1, alpha2
-    initial_guess = [0.20, 0.30, 0.34, -0.34]
+    if initial_guess == []:
+        initial_guess = [0.20, 0.30, 0.34, -0.34]
     print(f"Initial guess: {initial_guess}")
     bnds = ((-1,1),(-PI,PI),(-1,1),(-1,1))   # bounds on variables. NOTE: What should they be?
-    ops = {'disp': None, 'maxcor': 10, 'ftol': 2.220446049250313e-09, 'gtol': 1e-05, 'eps': 1e-08, 'maxfun': 15000, 'maxiter': 15000, 'iprint': - 1, 'maxls': 20, 'finite_diff_rel_step': None}
+    #ops = {'disp': None, 'maxcor': 10, 'ftol': 2.220446049250313e-09, 'gtol': 1e-05, 'eps': 1e-08, 'maxfun': 15000, 'maxiter': 15000, 'iprint': - 1, 'maxls': 20, 'finite_diff_rel_step': None}
     tolerance = 10**-4
     print("Optimizing...")
     # scipy existing minimizing function. 

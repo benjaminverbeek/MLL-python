@@ -86,7 +86,7 @@ def negLogLikelihood(par, var, pdf, normalizeSeparately=False, normalizationAngl
     print("--------")
     if normalizeSeparately==True:
         normalization = MCintegralNum(*par, normalizationAngles)
-        print(normalization)
+        #print(normalization)
         t2 = time.time()
         print(f"One normalization done... took {t2 - t1:.5f} seconds.")
     else:
@@ -95,6 +95,7 @@ def negLogLikelihood(par, var, pdf, normalizeSeparately=False, normalizationAngl
     r = iterativeLL(par,var) + len(var)*np.log(normalization) # normalize after; -log(W_i/norm) = -log(W_i) + log(norm) 
     
     t3 = time.time()
+    print(f"LL: \t {r}")
     print(f"One set of parameters done. Took {t3 - t2:.5f} seconds.")    # takes a long time but not AS long as normalization.
     print(f"Total time for one run was {t3 - t1:.5f} seconds.")
     return r
