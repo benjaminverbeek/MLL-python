@@ -115,10 +115,15 @@ def main():
     # skip first if it is numbered input, all in list comprehension.
     xi_set = np.asarray(xi_set) # converts to numpy.array. Much faster than numba typed list.
 
-    print("Finished reading.")
-    print(xi_set[-1])
-    print(f"Number of measurement points: {len(xi_set)}")
-    print("DONE")
+    print(
+        f"""
+Finished reading.
+{xi_set[-1]}
+Number of measurement points: {len(xi_set)}
+DONE
+        """
+    )
+
     t2 = time.time()
     print(f"--- {(t2 - start_time):.3f} seconds ---")
 
@@ -146,7 +151,7 @@ def main():
 
     print("Optimizing...")
     # scipy existing minimizing function. 
-    res = optimize.minimize(negLogLikelihood, initial_guess, (xi_set[0:], WSingleTagNum, True, normalizationAngles[0:]), tol=tolerance, bounds=bnds)
+    res = optimize.minimize(negLogLikelihood, initial_guess, (xi_set[1:], WSingleTagNum, True, normalizationAngles[0:]), tol=tolerance, bounds=bnds)
     ########## END OPTIMIZE ##########
 
     ########## PRESENT RESULTS: ##########
