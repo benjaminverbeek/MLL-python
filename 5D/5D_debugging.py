@@ -74,10 +74,10 @@ def WDoubleTagIntegrable(alpha,dPhi,alpha1,alpha2):
 ##### END THEORY #####
 pars = [0.46, PI/4, 0.75, -0.75]
 angs = [0.0321418,        2.31065,        2.80985,        2.02057,       -1.68605]
-r1 = WDoubleTag(*pars, *angs)
-r2 = WDoubleTag2(*pars, *angs)
+th,th1,ph1,th2,ph2 = angs
+r1 = WDoubleTag(*pars, th,th1,th2,ph1,ph2) # corrected order.
 print(f"W-func evaluated at {pars}, {angs}, yielding:")
-print(f"v1:    {r1}      v2:     {r2}      equal: {r1==r2}")
+print(f"v1:    {r1}    ")
 
 ##### MC INTEGRATOR #####
 # MC-integrator for normalization factors

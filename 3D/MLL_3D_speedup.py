@@ -130,7 +130,7 @@ def main():
         branches = tree.arrays(library='np')
         cos_th = branches['cosThLam']
         cos_thP = branches['cosThPn']
-        xi_set = np.vstack((cos_th,cos_thP)).T    # returns what I want          # as fast?
+        xi_set = np.vstack((cos_th,cos_thP)).T    # "merges" the data into format the program needs: ((angle1,angle2), (angle1,angle2), ...)
     
     print(
         f"""
