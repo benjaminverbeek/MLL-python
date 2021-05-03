@@ -13,21 +13,27 @@ import time                     # for timing, comes with Python
 import numpy as np              # requires download, e.g. "$ pip3 install numpy". For scipy and efficient funcs.
 from scipy import optimize      # requires download, e.g. "$ pip3 install scipy". For optimization of LL.
 import numba                    # requires download, e.g. "$ pip3 install numba". For efficient execution.
-from numba import jit, prange           # numba
+from numba import jit, prange   # numba specific import to aid readibility
+import uproot                   # needed to read root files. Not neccessary otherwise.
 ##### END IMPORTS #####
 
 # Set some parameters for the fit.
 alpha = 0.754   # assumed. Global variable.  Had 0.753 before, which stood in formalism_viktor.pdf
-angleDistributionData_filename = "lAngles.txt"  # specify path if not in same folder.
+#angleDistributionData_filename = "lAngles.txt"  # specify path if not in same folder.
+angleDistributionData_filename = "angleTree.root"  # specify path if not in same folder.
 normalizationData_filename = "lPHSP_4Pi.txt"
 numberedInput = False        # Is one column of the input data just numbering? Specify that here.
+
+sigIsRoot, normIsRoot = False, False
+if angleDistributionData_filename.split(".")[-1] == "root":     sigIsRoot = True
+if normalizationData_filename.split(".")[-1] == "root":     normIsRoot = True
 
 numberedInput = int(numberedInput)  # True - 1, False - 0. This is how many colums to skip in indata files. Can be specified manually further down.
 
 ###### THEORY ######
 @jit(nopython=True) # Applies numba magic. nopython=True doesn't appear to make a difference but is apparently recommended.
 def WSingleTagNum(eta, delta_phi, cos_th, cos_thP):
-    '''Normalize this to get the PDF to optimize. W is the function from theory (Fäldt, Kupsc)'''
+    """Normalize this to get the PDF to optimize. W is the function from theory (Fäldt, Kupsc)"""
     # https://arxiv.org/pdf/1702.07288.pdf
     return 1 + eta * (cos_th)**2 + alpha * (1 - eta**2)**(0.5) * np.sin(delta_phi) \
             * np.sin(np.arccos(cos_th)) * cos_th * cos_thP  # W function
@@ -70,7 +76,7 @@ def iterativeLL(par, var):  # a separate function so numba can optimize it.
 
 # Generalized LL-func.: send in a pdf too, and let par be n-dim, dataset var X be m-dim.
 def negLogLikelihood(par, var, pdf, normalizeSeparately=False, normalizationAngles=[]):
-    '''Minimize this function for decay parameters to find max of Log-Likelihood for distribution. \n
+    """Minimize this function for decay parameters to find max of Log-Likelihood for distribution. \n
     par : decay parameters to maximize [list], N-dim \n
     var : dataset of variables (xi) [list of lists] M-dim (NOTE: the inner lists represent observed points, i.e. 
     every variable is not a separate list, but rather part of a set of variables (i.e. a point)). 
@@ -79,7 +85,7 @@ def negLogLikelihood(par, var, pdf, normalizeSeparately=False, normalizationAngl
     >>> var = [ [a0, a1, a2, ...], [b0, b1, b2, ...] ] 
     where a, b are different variables for the pdf. \n
     pdf : must take arguments pdf(p1,p2, ..., pN, v1, v2, ..., vM)
-    Lists (and lists of lists) should be of type typed_list from numba List() to run.'''
+    Lists (and lists of lists) should be of type typed_list from numba List() to run."""
     
     t1 = time.time()
 
@@ -110,16 +116,26 @@ def main():
 
     ########## READ DATA: ##########
     # Read angle distribution data. Becomes python list of numba-lists
-    xi_set = [ list(map(float,i.split()))[numberedInput:] for i in open(angleDistributionData_filename).readlines() ]    # list (of lists)
-    # Iterate thru lines of datafile, for each line, split it into list of number contents,
-    # map the content of that list from str -> float, convert map object -> list, 
-    # skip first if it is numbered input, all in list comprehension.
-    xi_set = np.asarray(xi_set) # converts to numpy.array. Much faster than numba typed list.
-
+    if not sigIsRoot:
+        # Iterate thru lines of datafile, for each line, split it into list of number contents,
+        # map the content of that list from str -> float, convert map object -> list, 
+        # skip first if it is numbered input, all in list comprehension.
+        xi_set = [ list(map(float,i.split()))[numberedInput:] for i in open(angleDistributionData_filename).readlines() ]    # list (of lists)
+        xi_set = np.asarray(xi_set) # converts to numpy.array. Much faster than numba typed list.
+    else:
+        # NOTE: requieres knowledge about .root tree structure...
+        file = uproot.open(angleDistributionData_filename)   # >>> file.keys()            ['Angles;1']
+        # >>> file.classnames()         {'Angles': 'TTree'}
+        tree = file['Angles']
+        branches = tree.arrays(library='np')
+        cos_th = branches['cosThLam']
+        cos_thP = branches['cosThPn']
+        xi_set = np.vstack((cos_th,cos_thP)).T    # returns what I want          # as fast?
+    
     print(
         f"""
 Finished reading.
-{xi_set[-1]}
+{xi_set[0]}
 Number of measurement points: {len(xi_set)}
 DONE
         """
