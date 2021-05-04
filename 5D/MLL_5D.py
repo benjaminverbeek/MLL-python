@@ -129,14 +129,13 @@ def negLL(par, var, pdf, normSep=False, normAngs=[]):
     if normSep==True:
         normalization = MCintegral(*par, normAngs, pdf)
         t2 = time.time()
-        print(f"One normalization done... took {t2 - t1:.5f} seconds. Norm = {normalization}")
+        print(f"One normalization done... took {t2 - t1:.5f} seconds. \t   Norm:  {normalization}")
     else:
         normalization = 1   # nothing happens. log(1) = 0.
-    
+    # Calculate LL-sum and add normalization
     r = iterativeLL(par,var, pdf) + len(var)*np.log(normalization) # normalize after; -log(W_i/norm) = -log(W_i) + log(norm) 
     t3 = time.time()
-    print(f"neg LL: \t {r}")
-    print(f"One set of parameters done. Took {t3 - t2:.5f} seconds.")    # takes a long time but not AS long as normalization.
+    print(f"One LL-sum done. Took {t3 - t2:.5f} seconds. \t\t\t neg LL: {r}")    # takes a long time but not AS long as normalization.
     print(f"Total time for one iteration was {t3 - t1:.5f} seconds.")
     return r
 ##### END NEG LOG LIKELIHOOD FUNCTION #####
@@ -163,9 +162,9 @@ def main():
     normAngs = [ list(map(float,i.split()))[numberedInput:] for i in open(normalizationData_filename).readlines() ]    # list (of lists) 
     normAngs = np.asarray(normAngs) # needed for numba. Fixed datatype.
     print(f"First row: {normAngs[0]}")
-    print(f"Number of angles for normalization: {len(normAngs)}")
+    print(f"Number of points for normalization: {len(normAngs)}")
     print(f"--- {(time.time() - t2):.3f} seconds for normalization data ---")
-    print(f"--- {(time.time() - start_time):.3f} seconds total for all input data ---")
+    print(f"------ {(time.time() - start_time):.3f} seconds total for all input data ------ \n")
     ########## END READ DATA ##########
 
     ########## OPTIMIZE: ##########
@@ -177,7 +176,7 @@ def main():
     # Options for the optimizer. Can also fix method. Read more on: https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html
     #ops = {'disp': None, 'maxcor': 10, 'ftol': 2.220446049250313e-09, 'gtol': 1e-05, 'eps': 1e-08, 'maxfun': 15000, 'maxiter': 15000, 'iprint': - 1, 'maxls': 20, 'finite_diff_rel_step': None}
     tolerance = 10**-6
-    print("Optimizing...")
+    print("OPTIMIZING...")
     # scipy existing minimizing function. 
     res = optimize.minimize(negLL, initial_guess, (xi_set[0:], WDoubleTag, True, normAngs[0:]), bounds=bnds, tol=tolerance)#, method='L-BFGS-B')#, options=ops)
     ########## END OPTIMIZE ##########
@@ -190,24 +189,24 @@ def main():
     else:
         print("!!! OPTIMIZATION WAS NOT SUCCESSFUL !!!")
     print(f"\n------ TOOK A TOTAL OF {time.time() - start_time:.3f} SECONDS ------")
-    print(f"Solved for: \t\t alpha, dPhi, alpha1, alpha2 \nBounded by: \t\t {bnds}")
-    print(f"Initial guess: \t\t {initial_guess}")
-    print(f"Expected result: \t {(0.460, 0.785398, 0.75, -0.75)}") # input to generate data, according to Patrik
-    print(f"Actual result: \t\t {res['x']}")
+    print(f"          Solved for: \t alpha, dPhi, alpha1, alpha2 \n          Bounded by: \t {bnds}")
+    print(f"       Initial guess: \t {initial_guess}")
+    print(f"     Expected result: \t {(0.460, 0.785398, 0.75, -0.75)}") # input to generate data, according to Patrik
+    print(f"       Actual result: \t {res['x']}")
     alpha_res = res['x'][0]
     dphi_res = res['x'][1]
     alpha1_res = res['x'][2]
     alpha2_res = res['x'][3]
-    print(f"Result for alpha: \t {alpha_res}")
-    print(f"Result for delta-phi: \t {dphi_res} rad, \t or delta-phi = {dphi_res*180/PI} deg")
-    print(f"Result for alpha1: \t {alpha1_res}")
-    print(f"Result for alpha2: \t {alpha2_res}")
+    print(f"    Result for alpha: \t {alpha_res}")
+    print(f"Result for delta-phi: \t {dphi_res} rad  =  {dphi_res*180/PI} deg") 
+    print(f"   Result for alpha1: \t {alpha1_res}")
+    print(f"   Result for alpha2: \t {alpha2_res}")
     
     print("")
     hess = (res['hess_inv']).todense()
     print("Inverse Hessian:")
     print(hess)
-    print(f'Variance alpha: \t {hess[0][0]} \nVariance delta-phi: \t {hess[1][1]} (rad) \nVariance alpha1: \t {hess[2][2]} \nVariance alpha2: \t {hess[3][3]} \n')
+    print(f'    Variance alpha: \t {hess[0][0]} \nVariance delta-phi: \t {hess[1][1]} (rad) \n   Variance alpha1: \t {hess[2][2]} \n   Variance alpha2: \t {hess[3][3]} \n')
     ########## END PRESENT RESULTS ##########
 
 ########## END MAIN ##########
