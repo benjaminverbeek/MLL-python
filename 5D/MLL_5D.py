@@ -6,7 +6,9 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 print("--- RUNNING MAX LOG LIKELIHOOD FIT ---")
-
+dataSize = 100000
+normSize = 10*dataSize
+totalTime = []
 ##### IMPORTS #####
 # Imports necessary modules
 from math import pi as PI       # for pi, comes with Python
@@ -137,6 +139,7 @@ def negLL(par, var, pdf, normSep=False, normAngs=[]):
     t3 = time.time()
     print(f"One LL-sum done. Took {t3 - t2:.5f} seconds. \t\t\t neg LL: {r}")    # takes a long time but not AS long as normalization.
     print(f"Total time for one iteration was {t3 - t1:.5f} seconds.")
+    totalTime.append(t3 - t1) 
     return r
 ##### END NEG LOG LIKELIHOOD FUNCTION #####
 ############# END HELP FUNCTIONS #############
@@ -178,36 +181,32 @@ def main():
     tolerance = 10**-6
     print("OPTIMIZING...")
     # scipy existing minimizing function. 
-    res = optimize.minimize(negLL, initial_guess, (xi_set[0:], WDoubleTag, True, normAngs[0:]), bounds=bnds, tol=tolerance)#, method='L-BFGS-B')#, options=ops)
+    res = optimize.minimize(negLL, initial_guess, (xi_set[0:dataSize], WDoubleTag, True, normAngs[0:normSize]), bounds=bnds, tol=tolerance)#, method='L-BFGS-B')#, options=ops)
     ########## END OPTIMIZE ##########
 
     ########## PRESENT RESULTS: ##########
-    print("\n------ FINISHED OPTIMIZATION, SCIPY.OPTIMIZE.MINIMIZE RESULTS: ------")
+    print(f"\n ------ FINISHED OPTIMIZATION. SCIPY.OPTIMIZE.MINIMIZE RESULTS: ------")
+    solvedFor = ('alpha','dPhi','alpha1','alpha2') # what did you solve for?
     print(res)  # scipy default result structure
     if res['success'] == True:
         print(f"CONVERGED SUCCESSFULLY, using tolerance {tolerance}")
     else:
         print("!!! OPTIMIZATION WAS NOT SUCCESSFUL !!!")
     print(f"\n------ TOOK A TOTAL OF {time.time() - start_time:.3f} SECONDS ------")
-    print(f"          Solved for: \t alpha, dPhi, alpha1, alpha2 \n          Bounded by: \t {bnds}")
-    print(f"       Initial guess: \t {initial_guess}")
-    print(f"     Expected result: \t {(0.460, 0.785398, 0.75, -0.75)}") # input to generate data, according to Patrik
-    print(f"       Actual result: \t {res['x']}")
-    alpha_res = res['x'][0]
-    dphi_res = res['x'][1]
-    alpha1_res = res['x'][2]
-    alpha2_res = res['x'][3]
-    print(f"    Result for alpha: \t {alpha_res}")
-    print(f"Result for delta-phi: \t {dphi_res} rad  =  {dphi_res*180/PI} deg") 
-    print(f"   Result for alpha1: \t {alpha1_res}")
-    print(f"   Result for alpha2: \t {alpha2_res}")
-    
+    print(f"{'Solved for:':>20}\t{solvedFor}\n{'Bounded by:':>20}\t{bnds}")
+    print(f"{'Initial guess:':>20}\t{initial_guess}")
+    print(f"{'Expected result:':>20}\t{(0.460, 0.785398, 0.75, -0.75)}") # input to generate data, according to Patrik
+    print(f"{'Actual result:':>20}\t{res['x']}")
+    for i in range(len(solvedFor)):
+        print(f"{f'Result for {solvedFor[i]}:':>20}{res['x'][i]:>+20.8f}")
     print("")
     hess = (res['hess_inv']).todense()
     print("Inverse Hessian:")
     print(hess)
-    print(f'    Variance alpha: \t {hess[0][0]} \nVariance delta-phi: \t {hess[1][1]} (rad) \n   Variance alpha1: \t {hess[2][2]} \n   Variance alpha2: \t {hess[3][3]} \n')
+    for i in range(len(solvedFor)):
+        print(f"{f'Variance {solvedFor[i]}:':>20}{hess[i][i]:>20.8f}")
     ########## END PRESENT RESULTS ##########
+    print(sum(totalTime)/len(totalTime))
 
 ########## END MAIN ##########
 
