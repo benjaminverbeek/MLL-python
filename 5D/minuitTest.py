@@ -159,7 +159,7 @@ def negLL(par, var, pdf, normSep=False, normAngs=[]):
     r = iterativeLL(par,var, pdf) + len(var)*np.log(normalization) # normalize after; -log(W_i/norm) = -log(W_i) + log(norm) 
     t3 = time.time()
     if dispIterInfo:
-        print(f"One LL-sum done. Took {t3 - t2:.5f} seconds. \t\t\t neg LL: {r}")    # takes a long time but not AS long as normalization.
+        print(f"One LL-sum done. Took {t3 - t2:.5f} seconds. \t\t\t neg  LL: {r}")    # takes a long time but not AS long as normalization.
         print(f"Total time for one iteration was {t3 - t1:.5f} seconds.")
     totalTime.append(t3 - t1) 
     return r
@@ -194,7 +194,7 @@ def main():
     print(f"--- {(time.time() - t2):.3f} seconds for normalization data ---")
     print(f"------ {(time.time() - start_time):.3f} seconds total for all input data ------ \n")
     ########## END READ DATA ##########
-
+    '''
     ########## OPTIMIZE: ##########
     # input parameter values 1, 2, 3, 4 = 0.461, 0.740, 0.754, -0.754 (from Patrik Adlarson)
     # Parameters to optimize for: alpha, dPhi, alpha1, alpha2
@@ -240,8 +240,6 @@ def main():
     ########## END PRESENT RESULTS ##########
     print(sum(totalTime)/len(totalTime))
     print(f'Using {dataTo - dataFrom} points.')
-    global resSci
-    resSci = res.x
 
     tmp_i = np.zeros(len(res.x))
     for i in range(len(res.x)):
@@ -250,7 +248,7 @@ def main():
         uncertainty_i = np.sqrt(max(1, abs(res.fun)) * ftol * hess_inv_i)       # NOTE: weird, it depends on res.fun?
         tmp_i[i] = 0.0
         print('x^{0} = {1:12.4e} ± {2:.1e}'.format(i, res.x[i], uncertainty_i))
-
+'''
 ########## END MAIN ##########
 
 
@@ -284,21 +282,20 @@ def negLLMinuit(par):
     return r
 
 if __name__ == "__main__":  # doesn't run if imported.
+    t0 = time.time()
     main()
     global xi_set
     print(xi_set[1])
-    global resSci
-    print(resSci)
-    #m = Minuit(negLLMinuit, (0.46, 0.74, 0.75, -0.75))
-    m = Minuit(negLLMinuit, resSci)
-    m.errordef = Minuit.LIKELIHOOD  # important.
-    #m.migrad()
-    #print(m.valid)
-    #print(m.values)
+    m = Minuit(negLLMinuit, (0.46, 0.74, 0.75, -0.75))
+    m.errordef = Minuit.LIKELIHOOD  # important
+    m.migrad()
+    print(m.valid)
+    print(m.values)
     m.hesse()   # run covariance estimator
     print(m.errors)
     print(m.covariance)
     inp = ''
+    print(time.time() - t0)
     while inp != 'q':   # won't get checked here.
         inp = input("command: ")
         if inp == 'q':
