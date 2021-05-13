@@ -1,37 +1,37 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Program to make 5D fit (Double-tag BESIII)            #
 # Benjamin Verbeek, 2021-04-30                          #
-# Fully functional. Theory definitions specified in     #
-# appropriate places.                                   #
+# Now using iminuit for fit, gives proper variance.     #
+# Theory definitions specified in appropriate places.   #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# NOTE: Seems to require good starting guess. Use scipy for that?
 
 print("--- RUNNING MAX LOG LIKELIHOOD FIT ---")
+##### FIT PARAMETERS FOR ANALYSIS #####
 dataFrom = 0
-dataTo = 10_000 + 1
+dataTo = 100_000 + 1
 normFrom = 0
-normTo = 100_000 + 1
+normTo = 1000_000 + 1
 totalTime = []
 dispIterInfo = False    # if set to True, prints info about each iteration (LL, time, Norm). False: just a loading bar.
-nIter=0 # counts iterations
+
 ##### IMPORTS #####
 # Imports necessary modules
 from math import pi as PI       # for pi, built-in Python
 import time                     # for timing, built-in Python
 import numpy as np              # requires download, e.g. "$ pip3 install numpy". For scipy and efficient funcs.
 from numpy import sin, cos, arccos
-from scipy import optimize      # requires download, e.g. "$ pip3 install scipy". For optimization of LL.
-import numba                    # requires download, e.g. "$ pip3 install numba". For efficient execution.
-from numba import jit           
-import iminuit                  # requires download, e.g. "$ pip3 install iminuit". For optimization of LL.
-from iminuit import Minuit      
+from numba import jit           # requires download, e.g. "$ pip3 install numba". For efficient execution.
+from iminuit import Minuit      # requires download, e.g. "$ pip3 install iminuit". For optimization of LL.
 ##### END IMPORTS #####
 
 # Set some parameters for the fit.
 angleDistributionData_filename = "mcsig100k_JPsi_LLbar.dat"  # specify path if not in same folder.
 normalizationData_filename = "mcphsp1000k_JPsi_LLbar.dat"
 numberedInput = True        # Is one column of the input data just numbering? Specify that here.
-
+###
 numberedInput = int(numberedInput)  # True - 1, False - 0. This is how many colums to skip in indata files. Can be specified manually further down.
+nIter=0 # counts iterations
 ###### THEORY ######    (can be swapped out for whatever )
 # Theory from http://uu.diva-portal.org/smash/get/diva2:1306373/FULLTEXT01.pdf , same as ROOT-implementation.
 # here alpha = eta = alpha_psi
@@ -86,8 +86,8 @@ def WDoubleTag(alpha, dPhi, alpha1, alpha2, th, th1, ph1, th2, ph2):
     C22(alpha, dPhi, th)/2 * a20(alpha1, th1, ph1) * a20(alpha2, th2, ph2) + \
     C31(alpha, dPhi, th)/2 * a30(alpha1, th1, ph1) * a10(alpha2, th2, ph2) + \
     C33(alpha, dPhi, th)/2 * a30(alpha1, th1, ph1) * a30(alpha2, th2, ph2)
-
 ##### END THEORY #####
+
 
 ##### MC INTEGRATOR #####
 # MC-integrator for normalization factors
@@ -115,25 +115,30 @@ def iterativeLL(par, var, pdf):
         s -= np.log(pdf(alpha,dPhi,alpha1,alpha2 , th,th1,ph1,th2,ph2)) # log-sum of pdf gives LL. Negative so we minimize.
     return s
 
-# Generalized LL-func.: send in a pdf too, and let par be n-dim, dataset var X be m-dim.
 # Note that this is unjitted: It would barely improve performance and would reduce readability/generalizability by a lot.
 def negLLMinuit(par): 
-    """A minuit modified negLL function. Only takes in parameters to optimize."""
+    """A minuit modified negLL function. Only takes in parameters to optimize.
+    It is vital that global variables xi_set and normAngs are defined containing data on the correct format."""
     normSep = True
-    global xi_set
-    global normAngs
+    global xi_set       # bit ugly. Requiered for Minuit fit (function to optimize only dependent on parameters to optimize for)
+    global normAngs     # WARNING: Global vairable
     var = xi_set
     pdf = WDoubleTag
     normAngs = normAngs
-    t1 = time.time()
+    
+    t1 = time.time()    # time iterations
     
     if dispIterInfo:
         print("--------")
     else:
-        global nIter
+        global nIter    # WARNING: Global variable
         nIter = nIter + 1
-        print("-"*nIter + f"> {nIter}", end="\r")
-    if normSep==True:
+        if nIter < 100:
+            print("-"*nIter + f"> {nIter}", end="\r")   # Loading bar.
+        else:
+            print("*" + f"> {nIter}", end="\r")   # Loading bar.
+
+    if normSep==True:   # Structured this way, a finished PDF can be used too. Just set normSep=False
         normalization = MCintegral(*par, normAngs, pdf)
         t2 = time.time()
         if dispIterInfo: print(f"One normalization done... took {t2 - t1:.5f} seconds. \t   Norm:  {normalization}")
@@ -155,56 +160,58 @@ def main():
     start_time = time.time()
     print("Reading input data... \t (this might take a minute)")
     ########## READ DATA: ##########
-    # Read angle distribution data. Becomes python list of numba-lists
+    # Read angle distribution data, save in numpy-array (needed for numba compatibility & speed)
     global xi_set   # Global variable for access in negLL
     xi_set = [ list(map(float,i.split()))[numberedInput:] for i in open(angleDistributionData_filename).readlines() ]    # list (of lists)
     # Iterate thru lines of datafile, for each line, split it into list of number contents, map the content of that list from
     # str -> float, convert map object -> list, skip first if it is numbered input, all in list comprehension.
     xi_set = np.asarray(xi_set) # converts to numpy.array. Much faster than numba typed list.
-    xi_set = xi_set[dataFrom:dataTo]
-    print(f"First row: {xi_set[0]}")
-    print(f"Number of measurement points: {len(xi_set)}")
+    xi_set = xi_set[dataFrom:dataTo]    # for analysis
+    print(f"First row: {xi_set[0]}")    # sanity-check data
+    print(f"Size of signal set: {len(xi_set)}")
     print("Finished reading signal data.")
     t2 = time.time()
     print(f"--- {(t2 - start_time):.3f} seconds ---")
 
     # Read normalization data
     print("Reading normalization data...")
-    global normAngs # Global variable for access in negLL
+    global normAngs     # Global variable for access in negLL
     normAngs = [ list(map(float,i.split()))[numberedInput:] for i in open(normalizationData_filename).readlines() ]    # list (of lists) 
     normAngs = np.asarray(normAngs) # needed for numba. Fixed datatype.
-    normAngs = normAngs[normFrom:normTo]
-    print(f"First row: {normAngs[0]}")
+    normAngs = normAngs[normFrom:normTo]    # for analysis
+    print(f"First row: {normAngs[0]}")      # sanity-check data
     print(f"Number of points for normalization: {len(normAngs)}")
-    print(f"--- {(time.time() - t2):.3f} seconds for normalization data ---")
-    print(f"------ {(time.time() - start_time):.3f} seconds total for all input data ------ \n")
+    print(f'{f" {(time.time() - t2):.3f} seconds for normalization data ":-^60}')
+    print(f'{f" {(time.time() - start_time):.3f} seconds total for all input data ":-^60}')
     ########## END READ DATA ##########
 
     ########## OPTIMIZE WITH MINUIT ##########
-    initGuess = (0.46, 0.74, 0.75, -0.75)
+    #initGuess = (0.461, 0.740, 0.754, -0.754)  # expected results
+    initGuess = (0.4, 0.6, 0.6, -0.6)
     m = Minuit(negLLMinuit, initGuess)  # define minuit function and initial guess
     m.errordef = Minuit.LIKELIHOOD      # important
-    print("OPTIMIZING:")
+    print(f"OPTIMIZING...          initial guess: {initGuess}")
     m.migrad()  # run minuit optimziation
-    print()
+    #print()    # to see how much is needed for optimizer vs error estimator
     m.hesse()   # run covariance estimator
-    print()
+    print() # offset /r from loading bar.
     varNames = ('alpha', 'dPhi', 'alpha_1', 'alpha_2')
     print(f"Valid optimization: {m.valid}")  # was the optimization successful?
     print("Parameter estimation:")
     for var, val, err in zip(varNames, m.values, m.errors):
-        print(f"{var:>10}: {val:>+15.10f} ± {err:.10f}")
-    print("\nCovariance matrix:")
+        print(f"{var:>10}: {val:>15.10f} ± {err:.10f}")
+    print("Covariance matrix:")
     print(m.covariance)
     print(f'Covariance matrix accurate: {m.accurate}')
 
-    print("\nFor analysis:")
+    print(f"\nFor analysis:          Data: {dataFrom}-{dataTo-1}       Norm: {normFrom}-{normTo-1}")
+    print(f"Initial guess: {initGuess}")
     resVals = []
     resErrs = []
     for val, err in zip(m.values, m.errors):
         resVals.append(str(val))
         resErrs.append(str(err))
-    print(', '.join(resVals))
+    print(', '.join(resVals))   # easy to copy-paste to excel.
     print(', '.join(resErrs))
     ########## END OPTIMIZE WITH MINUIT ##########
 ########## END MAIN ##########
