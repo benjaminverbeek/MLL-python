@@ -4,7 +4,7 @@
 # Now using iminuit for fit, gives proper variance.     #
 # Theory definitions specified in appropriate places.   #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# NOTE: Seems to require good starting guess. Use scipy for that?
+# NOTE: Takes about twice as long as only using minuit/scipy
 
 print("--- RUNNING MAX LOG LIKELIHOOD FIT ---")
 ##### FIT PARAMETERS FOR ANALYSIS #####
@@ -136,7 +136,7 @@ def negLLMinuit(par):
         shapes = ['-', '~', '=', '#', '*', ':']
         maxWidth = 50 + 1
         nIter = nIter + 1
-        print(shapes[(nIter//maxWidth)%len(shapes)]*(nIter%maxWidth) + f"> {nIter}", end="\r")   # Loading bar.
+        print(shapes[(nIter//maxWidth)%len(shapes)]*(nIter%maxWidth) + f"> {nIter} ", end="\r")   # Loading bar.
 
     if normSep==True:   # Structured this way, a finished PDF can be used too. Just set normSep=False
         normalization = MCintegral(*par, normAngs, pdf)
@@ -187,21 +187,20 @@ def main():
 
     ########## OPTIMIZE WITH MINUIT ##########
     #initGuess = (0.461, 0.740, 0.754, -0.754)  # expected results
-    initGuess = (0.2, 0.2, 0.2, -0.2)
+    initGuess = (0.1, 0.3, 0.3, -0.3)
     bnds = ((-1,1),(-PI,PI),(-1,1),(-1,1))   # bounds on variables (needed for scipy)
-    # Options for the optimizer. Can also fix method. Read more on: https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html
+    # Options for the optimizer. Can also fix method. Read more: https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html
     ftol = 10**-3
-    #ops = {'disp': None, 'maxcor': 10, 'ftol': ftol, 'gtol': 1e-05, 'eps': 1e-08, 'maxfun': 15000, 'maxiter': 15000, 'iprint': - 1, 'maxls': 20, 'finite_diff_rel_step': None}
-    print("Optimizing for starting guess with scipy optimize.minimize...")
+    print(f"\nOptimizing for starting guess with scipy optimize.minimize           initial guess: {initGuess}")
     # scipy existing minimizing function. 
-    res = optimize.minimize(negLLMinuit, initGuess, bounds=bnds, tol=ftol)#, method='L-BFGS-B')#, options=ops)
+    res = optimize.minimize(negLLMinuit, initGuess, bounds=bnds, tol=ftol)  # Scipy optimization for starting guess for minuit
     print()
     print(res.x)
-
+    print(f"Optimizing with minuit          initial guess: {res.x}")
     m = Minuit(negLLMinuit, res.x)  # define minuit function and initial guess
-    print()
     m.errordef = Minuit.LIKELIHOOD      # important
-    print(f"OPTIMIZING...          initial guess: {initGuess}")
+    print()
+    print(f"Finding errors with minuit")
     m.migrad()  # run minuit optimziation
     print()
     m.hesse()   # run covariance estimator
@@ -223,8 +222,12 @@ def main():
     for val, err in zip(m.values, m.errors):
         resVals.append(str(val))
         resErrs.append(str(err))
-    print(', '.join(resVals))   # easy to copy-paste to excel.
-    print(', '.join(resErrs))
+    #print(', '.join(resVals))   # easy to copy-paste to excel.
+    #print(', '.join(resErrs))
+    print(', '.join(resVals + resErrs))
+    print()
+    print("Done.")
+
     ########## END OPTIMIZE WITH MINUIT ##########
 ########## END MAIN ##########
 
