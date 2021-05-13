@@ -6,12 +6,12 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # NOTE: Takes about twice as long as only using minuit/scipy
 
-print("--- RUNNING MAX LOG LIKELIHOOD FIT ---")
+print(f'{" RUNNING MAX LOG LIKELIHOOD FIT ":-^60}')
 ##### FIT PARAMETERS FOR ANALYSIS #####
 dataFrom = 0
-dataTo = 100_000 + 1
+dataTo = 10_000 + 1
 normFrom = 0
-normTo = 1000_000 + 1
+normTo = 100_000 + 1
 totalTime = []
 dispIterInfo = False    # if set to True, prints info about each iteration (LL, time, Norm). False: just a loading bar.
 
@@ -133,7 +133,7 @@ def negLLMinuit(par):
         print("--------")
     else:
         global nIter    # WARNING: Global variable
-        shapes = ['-', '~', '=', '#', '*', ':']
+        shapes = ['-', '~', '=', '+', '*', ':']
         maxWidth = 50 + 1
         nIter = nIter + 1
         print(shapes[(nIter//maxWidth)%len(shapes)]*(nIter%maxWidth) + f"> {nIter} ", end="\r")   # Loading bar.
@@ -171,7 +171,7 @@ def main():
     print(f"Size of signal set: {len(xi_set)}")
     print("Finished reading signal data.")
     t2 = time.time()
-    print(f"--- {(t2 - start_time):.3f} seconds ---")
+    print(f'{f" {(t2 - start_time):.3f} seconds ":-^60}')
 
     # Read normalization data
     print("Reading normalization data...")
@@ -181,7 +181,7 @@ def main():
     normAngs = normAngs[normFrom:normTo]    # for analysis
     print(f"First row: {normAngs[0]}")      # sanity-check data
     print(f"Number of points for normalization: {len(normAngs)}")
-    print(f'{f" {(time.time() - t2):.3f} seconds for normalization data ":-^60}')
+    print(f'{f" {(time.time() - t2):.3f} seconds ":-^60}')
     print(f'{f" {(time.time() - start_time):.3f} seconds total for all input data ":-^60}')
     ########## END READ DATA ##########
 
@@ -191,21 +191,19 @@ def main():
     bnds = ((-1,1),(-PI,PI),(-1,1),(-1,1))   # bounds on variables (needed for scipy)
     # Options for the optimizer. Can also fix method. Read more: https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html
     ftol = 10**-3
-    print(f"\nOptimizing for starting guess with scipy optimize.minimize           initial guess: {initGuess}")
+    varNames = ('alpha', 'dPhi', 'alpha_1', 'alpha_2')
+    print(f"\nOptimizing for starting guess with scipy optimize.minimize\ninitial guess: {initGuess}")
     # scipy existing minimizing function. 
     res = optimize.minimize(negLLMinuit, initGuess, bounds=bnds, tol=ftol)  # Scipy optimization for starting guess for minuit
     print()
-    print(res.x)
-    print(f"Optimizing with minuit          initial guess: {res.x}")
-    m = Minuit(negLLMinuit, res.x)  # define minuit function and initial guess
+    print(f"Optimizing with minuit\ninitial guess: {res.x}")
+    m = Minuit(negLLMinuit, res.x, name=varNames)  # define minuit function and initial guess
     m.errordef = Minuit.LIKELIHOOD      # important
-    print()
-    print(f"Finding errors with minuit")
     m.migrad()  # run minuit optimziation
     print()
+    print(f"Finding errors with minuit")
     m.hesse()   # run covariance estimator
     print() # offset /r from loading bar.
-    varNames = ('alpha', 'dPhi', 'alpha_1', 'alpha_2')
     print(f"Valid optimization: {m.valid}")  # was the optimization successful?
     print("Parameter estimation:")
     for var, val, err in zip(varNames, m.values, m.errors):
