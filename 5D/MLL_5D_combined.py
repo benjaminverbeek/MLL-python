@@ -6,15 +6,6 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # NOTE: Takes about twice as long as only using minuit/scipy
 
-print(f'{" RUNNING MAX LOG LIKELIHOOD FIT ":-^60}')
-##### FIT PARAMETERS FOR ANALYSIS #####
-dataFrom = 0
-dataTo = 10_000 + 1
-normFrom = 0
-normTo = 100_000 + 1
-totalTime = []
-dispIterInfo = False    # if set to True, prints info about each iteration (LL, time, Norm). False: just a loading bar.
-
 ##### IMPORTS #####
 # Imports necessary modules
 from math import pi as PI       # for pi, built-in Python
@@ -26,13 +17,25 @@ from numba import jit           # requires download, e.g. "$ pip3 install numba"
 from iminuit import Minuit      # requires download, e.g. "$ pip3 install iminuit". For optimization of LL.
 ##### END IMPORTS #####
 
+print(f'{" RUNNING MAX LOG LIKELIHOOD FIT ":-^60}')
+##### FIT PARAMETERS FOR ANALYSIS #####
+dataFrom = 0
+dataTo = 10_000 + 1
+normFrom = 0
+normTo = 100_000 + 1
+dispIterInfo = False    # if set to True, prints info about each iteration (LL, time, Norm). False: just a loading bar.
+use_scipy_for_initial_guess = True  # set to True if the initial guess is bad.
+
 # Set some parameters for the fit.
 angleDistributionData_filename = "mcsig100k_JPsi_LLbar.dat"  # specify path if not in same folder.
 normalizationData_filename = "mcphsp1000k_JPsi_LLbar.dat"
 numberedInput = True        # Is one column of the input data just numbering? Specify that here.
-###
+
+# Do not change:
 numberedInput = int(numberedInput)  # True - 1, False - 0. This is how many colums to skip in indata files. Can be specified manually further down.
 nIter=0 # counts iterations
+totalTime = [] # for timing per iteration. For analysis.
+
 ###### THEORY ######    (can be swapped out for whatever )
 # Theory from http://uu.diva-portal.org/smash/get/diva2:1306373/FULLTEXT01.pdf , same as ROOT-implementation.
 # here alpha = eta = alpha_psi
@@ -185,19 +188,23 @@ def main():
     print(f'{f" {(time.time() - start_time):.3f} seconds total for all input data ":-^60}')
     ########## END READ DATA ##########
 
-    ########## OPTIMIZE WITH MINUIT ##########
+    ########## OPTIMIZE WITH MINUIT (and maybe scipy) ##########
     #initGuess = (0.461, 0.740, 0.754, -0.754)  # expected results
-    initGuess = (0.1, 0.3, 0.3, -0.3)
+    initGuess = (0.46, 0.7, 0.7, -0.7)
     bnds = ((-1,1),(-PI,PI),(-1,1),(-1,1))   # bounds on variables (needed for scipy)
     # Options for the optimizer. Can also fix method. Read more: https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html
     ftol = 10**-3
     varNames = ('alpha', 'dPhi', 'alpha_1', 'alpha_2')
-    print(f"\nOptimizing for starting guess with scipy optimize.minimize\ninitial guess: {initGuess}")
-    # scipy existing minimizing function. 
-    res = optimize.minimize(negLLMinuit, initGuess, bounds=bnds, tol=ftol)  # Scipy optimization for starting guess for minuit
-    print()
-    print(f"Optimizing with minuit\ninitial guess: {res.x}")
-    m = Minuit(negLLMinuit, res.x, name=varNames)  # define minuit function and initial guess
+    if use_scipy_for_initial_guess == True:
+        print(f"\nOptimizing for starting guess with scipy optimize.minimize\ninitial guess: {initGuess}")
+        # scipy existing minimizing function. 
+        res = optimize.minimize(negLLMinuit, initGuess, bounds=bnds, tol=ftol)  # Scipy optimization for starting guess for minuit
+        print()
+        print(f"Optimizing with minuit\ninitial guess: {res.x}")
+        m = Minuit(negLLMinuit, res.x, name=varNames)  # define minuit function and initial guess
+    else:
+        print(f"Optimizing with minuit\ninitial guess: {initGuess}")
+        m = Minuit(negLLMinuit, initGuess, name=varNames) # define minuit function and initial guess
     m.errordef = Minuit.LIKELIHOOD      # important
     m.migrad()  # run minuit optimziation
     print()
@@ -214,7 +221,8 @@ def main():
 
     print(f"\nFor analysis:          Data: {dataFrom}-{dataTo-1}       Norm: {normFrom}-{normTo-1}")
     print(f"Initial guess: {initGuess}")
-    print(f"Minuit initial guess (from scipy): {res.x}")
+    if use_scipy_for_initial_guess:
+        print(f"Minuit initial guess (from scipy): {res.x}")
     resVals = []
     resErrs = []
     for val, err in zip(m.values, m.errors):
