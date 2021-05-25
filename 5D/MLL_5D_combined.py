@@ -1,6 +1,6 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Program to make 5D fit (Double-tag BESIII)            #
-# Benjamin Verbeek, 2021-04-30                          #
+# Benjamin Verbeek, updated 2021-05-14                  #
 # Now using iminuit for fit, gives proper variance.     #
 # Theory definitions specified in appropriate places.   #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -20,11 +20,11 @@ from iminuit import Minuit      # requires download, e.g. "$ pip3 install iminui
 print(f'{" RUNNING MAX LOG LIKELIHOOD FIT ":-^60}')
 ##### FIT PARAMETERS FOR ANALYSIS #####
 dataFrom = 0
-dataTo = 10_000 + 1
+dataTo   = 100_000 + 1
 normFrom = 0
-normTo = 100_000 + 1
+normTo = 1000_000 + 1
 dispIterInfo = False    # if set to True, prints info about each iteration (LL, time, Norm). False: just a loading bar.
-use_scipy_for_initial_guess = True  # set to True if the initial guess is bad.
+use_scipy_for_initial_guess = False  # set to True if the initial guess is bad.
 
 # Set some parameters for the fit.
 angleDistributionData_filename = "mcsig100k_JPsi_LLbar.dat"  # specify path if not in same folder.
@@ -219,6 +219,8 @@ def main():
     print(m.covariance)
     print(f'Covariance matrix accurate: {m.accurate}')
 
+    # For easy analysis.
+    '''
     print(f"\nFor analysis:          Data: {dataFrom}-{dataTo-1}       Norm: {normFrom}-{normTo-1}")
     print(f"Initial guess: {initGuess}")
     if use_scipy_for_initial_guess:
@@ -231,13 +233,14 @@ def main():
     #print(', '.join(resVals))   # easy to copy-paste to excel.
     #print(', '.join(resErrs))
     print(', '.join(resVals + resErrs))
-    print()
+    print(dataFrom-dataTo)
+    print(sum(totalTime)/len(totalTime))
     print("Done.")
-
+    '''
     ########## END OPTIMIZE WITH MINUIT ##########
 ########## END MAIN ##########
 
 if __name__ == "__main__":  # doesn't run if imported.
     t0 = time.time()
     main()
-    print(f"------ TOOK A TOTAL OF {time.time() - t0:.3f} SECONDS ------")
+    print(f"--------- TOOK A TOTAL OF {time.time() - t0:.3f} SECONDS ---------")
