@@ -25,7 +25,7 @@ from iminuit import Minuit      # requires download, e.g. "$ pip3 install iminui
 import os
 ##### END IMPORTS #####
 
-print(f'{" RUNNING MAX LOG LIKELIHOOD FIT ":-^60}')
+
 ##### FIT PARAMETERS FOR ANALYSIS #####
 # Set some parameters for the fit.
 dataFrom, dataTo = 0, 0     # ranges of data used. "From" is inclusive, "To" is exclusive (standard)
@@ -277,5 +277,6 @@ def main():
 
 if __name__ == "__main__":  # doesn't run if imported.
     t0 = time.time()
+    print(f'{" RUNNING MAX LOG LIKELIHOOD FIT ":-^60}')
     main()
     print(f"--------- TOOK A TOTAL OF {time.time() - t0:.3f} SECONDS ---------")
