@@ -10,6 +10,8 @@
 # the dimensions of the input data is to be made, according changes
 # must also be made when the input is unpacked in "itrativeLL" and
 # "MCintegral". Of course, also the input-data must be changed.
+# NOTE: Be careful with possible negative inputs for log. No such check exists.
+# The program will fail.
 
 ##### IMPORTS #####
 # Imports necessary modules
@@ -20,18 +22,19 @@ from numpy import sin, cos
 from scipy import optimize      # requires download, e.g. "$ pip3 install scipy". For optimization of LL.
 from numba import jit           # requires download, e.g. "$ pip3 install numba". For efficient execution.
 from iminuit import Minuit      # requires download, e.g. "$ pip3 install iminuit". For optimization of LL.
+import os
 ##### END IMPORTS #####
 
 print(f'{" RUNNING MAX LOG LIKELIHOOD FIT ":-^60}')
 ##### FIT PARAMETERS FOR ANALYSIS #####
 # Set some parameters for the fit.
-dataFrom, dataTo = 0, 0            # ranges of data used. "From" is inclusive, "To" is exclusive (standard)
-normFrom, normTo = 0, 0
-# Set all to 0 to use all data  (note, this does not work by default in Python). Can also set to None.
+dataFrom, dataTo = 0, 0     # ranges of data used. "From" is inclusive, "To" is exclusive (standard)
+normFrom, normTo = 0, 0     # Set all to 0 to use all data  (note, this does not work by default in Python). Can also set to None.
 dispIterInfo = False    # if set to True, prints info about each iteration (LL, time, Norm). False: just a loading bar.
 use_scipy_for_initial_guess = False  # set to True if the initial guess is bad.
-angleDistributionData_filename = "mcsig100k_JPsi_LLbar.dat"  # specify path if not in same folder.
-normalizationData_filename = "mcphsp1000k_JPsi_LLbar.dat"    # Ensure these files can be accessed.   
+signalData_filename = "somedir/mcsig100k_JPsi_LLbar.dat"    # specify path if not in same folder. (must use "/")
+normData_filename = "somedir2/mcphsp1000k_JPsi_LLbar.dat"    # Ensure these files can be accessed.
+directoryPathForSearch = "C:/"      # Will search from here if files not found.
 numberedInput = True        # Is one column of the input data just numbering? Specify that here.
 #initGuess = (0.461, 0.740, 0.754, -0.754)  # expected results for LLbar-data
 initGuess = (0.46, 0.7, 0.7, -0.7)      # Initial guess
@@ -39,11 +42,34 @@ bnds = ((-1,1),(-PI,PI),(-1,1),(-1,1))  # bounds on variables (needed for scipy)
 ftol = 10**-3                           # tolerance for scipy
 parNames = ('alpha', 'dPhi', 'alpha_1', 'alpha_2')  # Variable names for Minuit
 
-
 # Do not change:
 numberedInput = int(numberedInput)  # True - 1, False - 0. This is how many colums to skip in indata files. Can be specified manually further down.
 nIter=0 # counts iterations
 totalTime = [] # for timing per iteration. For analysis.
+
+# Searches for file.
+def find(name, path):
+    for root, dirs, files in os.walk(path):
+        if name in files:
+            return os.path.join(root, name)
+
+# Checks if files can be found, else searches for them.     
+try:
+    o = open(signalData_filename)
+    o.close()
+    o = open(normData_filename)
+    o.close()
+except FileNotFoundError:
+    print("Could not find files from current directory.")
+    tSearch = time.time()
+    print(f"Searching for in-data files in specified directory:\t '{directoryPathForSearch}'")
+    signalData_filename = find(signalData_filename.split('/')[-1], directoryPathForSearch)   # search only for name
+    print("Found: ", signalData_filename)
+    normData_filename = find(normData_filename.split('/')[-1], directoryPathForSearch)
+    print("Found: ", normData_filename)
+    print(f"Took {time.time()-tSearch:.3f} s to find files.")
+    if time.time()-tSearch > 10:
+        print("Try specifying the path more to reduce search-time.")
 
 ###### THEORY ######    (can be swapped out for whatever)
 # Theory from http://uu.diva-portal.org/smash/get/diva2:1306373/FULLTEXT01.pdf , same as ROOT-implementation.
@@ -174,7 +200,9 @@ def main():
     ########## READ DATA: ##########
     # Read angle distribution data, save in numpy-array (needed for numba compatibility & speed)
     global xi_set   # Global variable for access in negLL
-    xi_set = [ list(map(float,i.split()))[numberedInput:] for i in open(angleDistributionData_filename).readlines() ]    # list (of lists)
+    sigData = open(signalData_filename) # open file
+    xi_set = [ list(map(float,i.split()))[numberedInput:] for i in sigData.readlines() ]    # list (of lists)
+    sigData.close()     # close open file
     # Iterate thru lines of datafile, for each line, split it into list of number contents, map the content of that list from
     # str -> float, convert map object -> list, skip first if it is numbered input, all in list comprehension.
     xi_set = np.asarray(xi_set) # converts to numpy.array. Much faster than numba typed list.
@@ -188,7 +216,9 @@ def main():
     # Read normalization data
     print("Reading normalization data...")
     global normAngs     # Global variable for access in negLL
-    normAngs = [ list(map(float,i.split()))[numberedInput:] for i in open(normalizationData_filename).readlines() ]    # list (of lists) 
+    normData = open(normData_filename)  # open file
+    normAngs = [ list(map(float,i.split()))[numberedInput:] for i in normData.readlines() ]    # list (of lists) 
+    normData.close()    # close open file
     normAngs = np.asarray(normAngs) # needed for numba. Fixed datatype.
     normAngs = normAngs[normFrom:normTo or None]    # for analysis
     print(f"First row: {normAngs[0]}")      # sanity-check data
