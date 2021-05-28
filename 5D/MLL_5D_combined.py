@@ -64,12 +64,25 @@ except FileNotFoundError:
     tSearch = time.time()
     print(f"Searching for in-data files in specified directory:\t '{directoryPathForSearch}'")
     signalData_filename = find(signalData_filename.split('/')[-1], directoryPathForSearch)   # search only for name
-    print("Found: ", signalData_filename)
-    normData_filename = find(normData_filename.split('/')[-1], directoryPathForSearch)
-    print("Found: ", normData_filename)
+    print("Found:\t", signalData_filename)
+    # First try search in same dir as first file.
+    try:
+        print("Looking in same directory:\t",'/'.join(signalData_filename.split('\\')[:-1]))    # NOTE: Could be '/' if using Linux or other OS
+        normData_filename_TRY = find(normData_filename.split('/')[-1], '/'.join(signalData_filename.split('\\')[:-1]) )
+    except:
+        print("Error searching in same dir. Falling back on normal search.")
+        normData_filename_TRY = None
+    if normData_filename_TRY is None:
+        normData_filename = find(normData_filename.split('/')[-1], directoryPathForSearch)
+    else:
+        print("Found in same directory.")
+        normData_filename = normData_filename_TRY
+
+    print("Found:\t", normData_filename)
     print(f"Took {time.time()-tSearch:.3f} s to find files.")
     if time.time()-tSearch > 10:
         print("Try specifying the path more to reduce search-time.")
+########## END PREAMBLE & FILE-SEARCH ##########
 
 ###### THEORY ######    (can be swapped out for whatever)
 # Theory from http://uu.diva-portal.org/smash/get/diva2:1306373/FULLTEXT01.pdf , same as ROOT-implementation.
