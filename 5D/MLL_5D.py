@@ -1,15 +1,16 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Program to make 5D fit (Double-tag BESIII)            #
-# Benjamin Verbeek, updated 2021-05-25                  #
+# Benjamin Verbeek                                      #
 # Now using iminuit for fit, gives proper variance.     #
 # Theory definitions specified in appropriate places.   #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# NOTE: Takes about twice as long as only using minuit/scipy
 # NOTE: For modification of formalism, simply change the function
 # WDoubleTag to any desired probability distribution. Note, if 
 # the dimensions of the input data is to be made, according changes
 # must also be made when the input is unpacked in "itrativeLL" and
-# "MCintegral". Of course, also the input-data must be changed.
+# "MCintegral". "Note"'s mark these positions.
+# Of course, also the input-data must be changed.
+
 # NOTE: Be careful with possible negative inputs for log. No such check exists.
 # The program will fail.
 
@@ -32,15 +33,15 @@ dataFrom, dataTo = 0, 0     # ranges of data used. "From" is inclusive, "To" is 
 normFrom, normTo = 0, 0     # Set all to 0 to use all data  (note, this does not work by default in Python). Can also set to None.
 dispIterInfo = False    # if set to True, prints info about each iteration (LL, time, Norm). False: just a loading bar.
 use_scipy_for_initial_guess = False  # set to True if the initial guess is bad.
-signalData_filename = "somedir/mcsig100k_JPsi_LLbar.dat"    # specify path if not in same folder. (must use "/")
-normData_filename = "somedir2/mcphsp1000k_JPsi_LLbar.dat"    # Ensure these files can be accessed.
-directoryPathForSearch = "C:/"      # Will search from here if files not found.
+signalData_filename = "mcsig100k_JPsi_LLbar.dat"    # specify path if not in same folder. (must use "/")
+normData_filename = "mcphsp1000k_JPsi_LLbar.dat"    # Ensure these files can be accessed.
+directoryPathForSearch = "C:/Users/Admin/"      # Will search from here if files not found.
 numberedInput = True        # Is one column of the input data just numbering? Specify that here.
 #initGuess = (0.461, 0.740, 0.754, -0.754)  # expected results for LLbar-data
-initGuess = (0.46, 0.7, 0.7, -0.7)      # Initial guess
-bnds = ((-1,1),(-PI,PI),(-1,1),(-1,1))  # bounds on variables (needed for scipy)
+initGuess = (0.4, 0.7, 0.7, -0.7)      # Initial guess
+bnds = ((-1,1),(-PI,PI),(-1,1),(-1,1))  # bounds on parameters (needed for scipy)
 ftol = 10**-3                           # tolerance for scipy
-parNames = ('alpha', 'dPhi', 'alpha_1', 'alpha_2')  # Variable names for Minuit
+parNames = ('alpha', 'dPhi', 'alpha_1', 'alpha_2')  # Parameter names for Minuit
 
 # Do not change:
 numberedInput = int(numberedInput)  # True - 1, False - 0. This is how many colums to skip in indata files. Can be specified manually further down.
@@ -53,7 +54,9 @@ def find(name, path):
         if name in files:
             return os.path.join(root, name)
 
-# Checks if files can be found, else searches for them.     
+# Checks if files can be found, else searches for them.  
+print()
+print(f'{" LOCATING DATA-FILES ":-^60}')
 try:
     o = open(signalData_filename)
     o.close()
@@ -82,7 +85,7 @@ except FileNotFoundError:
     print(f"Took {time.time()-tSearch:.3f} s to find files.")
     if time.time()-tSearch > 10:
         print("Try specifying the path more to reduce search-time.")
-########## END PREAMBLE & FILE-SEARCH ##########
+########## END PREAMBLE ##########
 
 ###### THEORY ######    (can be swapped out for whatever)
 # Theory from http://uu.diva-portal.org/smash/get/diva2:1306373/FULLTEXT01.pdf , same as ROOT-implementation.
@@ -93,22 +96,22 @@ except FileNotFoundError:
 def C00(alpha, dPhi, th): return  2*(1 + alpha * cos(th)**2)
 
 @jit(nopython=True)
-def C02(alpha, dPhi, th): return  2*(1-alpha**2)**0.5 * sin(th)*cos(th)*sin(dPhi)
+def C02(alpha, dPhi, th): return 2*(1-alpha**2)**0.5 * sin(th)*cos(th)*sin(dPhi)
 
 @jit(nopython=True)
-def C11(alpha, dPhi, th): return  2*sin(th)**2
+def C11(alpha, dPhi, th): return 2*sin(th)**2
 
 @jit(nopython=True)
-def C13(alpha, dPhi, th): return  2*(1-alpha**2)**0.5 * sin(th)*cos(th)*cos(dPhi)
+def C13(alpha, dPhi, th): return 2*(1-alpha**2)**0.5 * sin(th)*cos(th)*cos(dPhi)
 
 @jit(nopython=True)
-def C20(alpha, dPhi, th): return  -1*C02(alpha,dPhi,th)
+def C20(alpha, dPhi, th): return -1*C02(alpha,dPhi,th)
 
 @jit(nopython=True)
-def C22(alpha, dPhi, th): return  alpha*C11(alpha,dPhi,th)
+def C22(alpha, dPhi, th): return alpha*C11(alpha,dPhi,th)
 
 @jit(nopython=True)
-def C31(alpha, dPhi, th): return  -1*C13(alpha,dPhi,th)
+def C31(alpha, dPhi, th): return -1*C13(alpha,dPhi,th)
 
 @jit(nopython=True)
 def C33(alpha, dPhi, th): return -2*(alpha + cos(th)**2)
@@ -208,6 +211,8 @@ def negLLMinuit(par):
 
 ########## MAIN: ########## 
 def main():
+    print()
+    print(f'{" RUNNING MAX LOG LIKELIHOOD FIT ":-^60}')
     start_time = time.time()
     print("Reading input data... \t (this might take a minute)")
     ########## READ DATA: ##########
@@ -220,7 +225,7 @@ def main():
     # str -> float, convert map object -> list, skip first if it is numbered input, all in list comprehension.
     xi_set = np.asarray(xi_set) # converts to numpy.array. Much faster than numba typed list.
     xi_set = xi_set[dataFrom:dataTo or None]    # for analysis
-    print(f"First row: {xi_set[0]}")    # sanity-check data
+    #print(f"First row: {xi_set[0]}")    # sanity-check data
     print(f"Size of signal set: {len(xi_set)}")
     print("Finished reading signal data.")
     t2 = time.time()
@@ -234,10 +239,11 @@ def main():
     normData.close()    # close open file
     normAngs = np.asarray(normAngs) # needed for numba. Fixed datatype.
     normAngs = normAngs[normFrom:normTo or None]    # for analysis
-    print(f"First row: {normAngs[0]}")      # sanity-check data
+    #print(f"First row: {normAngs[0]}")      # sanity-check data
     print(f"Number of points for normalization: {len(normAngs)}")
     print(f'{f" {(time.time() - t2):.3f} seconds ":-^60}')
     print(f'{f" {(time.time() - start_time):.3f} seconds total for all input data ":-^60}')
+    print()
     ########## END READ DATA ##########
 
     ########## OPTIMIZE WITH MINUIT (and maybe scipy) ##########
@@ -249,20 +255,24 @@ def main():
         print(f"Optimizing with minuit\ninitial guess: {res.x}")
         m = Minuit(negLLMinuit, res.x, name=parNames)  # define minuit function and initial guess
     else:
-        print(f"Optimizing with minuit\ninitial guess: {initGuess}")
+        print(f"Optimizing with Minuit.migrad\ninitial guess: {initGuess}")
         m = Minuit(negLLMinuit, initGuess, name=parNames) # define minuit function and initial guess
     
     m.errordef = Minuit.LIKELIHOOD      # important
     m.migrad()  # run minuit optimziation
 
     print()
-    print(f"Finding errors with minuit")
+    print(f"Estimating errors with Minuit.hesse")
     m.hesse()   # run covariance estimator
+    #m.minos() # alternative error estimator. Gave same results but slower during testing.
     print() # offset /r from loading bar.
+    print() # blank line
+    print(f'{" RESULTS ":-^60}')
     print(f"Valid optimization: {m.valid}")  # was the optimization successful?
-    print("Parameter estimation:")
+    print("Parameter estimation ± standard deviation:")
     for var, val, err in zip(parNames, m.values, m.errors):
         print(f"{var:>10}: {val:>15.10f} ± {err:.10f}")
+    print()
     print("Covariance matrix:")
     print(m.covariance)
     print(f'Covariance matrix accurate: {m.accurate}')
@@ -290,6 +300,5 @@ def main():
 
 if __name__ == "__main__":  # doesn't run if imported.
     t0 = time.time()
-    print(f'{" RUNNING MAX LOG LIKELIHOOD FIT ":-^60}')
     main()
-    print(f"--------- TOOK A TOTAL OF {time.time() - t0:.3f} SECONDS ---------")
+    print(f'{f" TOOK A TOTAL OF {time.time() - t0:.3f} SECONDS ":-^60}', end='\n')
