@@ -1,9 +1,9 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Program to make 5D fit (Double-tag BESIII)            #
-# Benjamin Verbeek                                      #
-# Now using iminuit for fit, gives proper variance.     #
+# Program to make 5D fit (spin 1/2 hyperon)             #
+# Benjamin Verbeek, Uppsala University                  #
 # Theory definitions specified in appropriate places.   #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
 # NOTE: For modification of formalism, simply change the function
 # WDoubleTag to any desired probability distribution. Note, if 
 # the dimensions of the input data is to be made, according changes
@@ -33,12 +33,15 @@ dataFrom, dataTo = 0, 0     # ranges of data used. "From" is inclusive, "To" is 
 normFrom, normTo = 0, 0     # Set all to 0 to use all data  (note, this does not work by default in Python). Can also set to None.
 dispIterInfo = False    # if set to True, prints info about each iteration (LL, time, Norm). False: just a loading bar.
 use_scipy_for_initial_guess = False  # set to True if the initial guess is bad.
-signalData_filename = "mcsig100k_JPsi_LLbar.dat"    # specify path if not in same folder. (must use "/")
-normData_filename = "mcphsp1000k_JPsi_LLbar.dat"    # Ensure these files can be accessed.
-directoryPathForSearch = "C:/Users/Admin/"      # Will search from here if files not found.
+# signalData_filename = "mcsig100k_JPsi_LLbar.dat"    # specify path if not in same folder. (must use "/")
+# normData_filename = "mcphsp1000k_JPsi_LLbar.dat"    # Ensure these files can be accessed.
+signalData_filename = "exp.dat"    # specify path if not in same folder. (must use "/")
+normData_filename = "mcphsp.dat"    # Ensure these files can be accessed.
+directoryPathForSearch = "C:/Users/Admin/Google Drive/Självständigt arbete i teknisk fysik"      # Will search from here if files not found.
 numberedInput = True        # Is one column of the input data just numbering? Specify that here.
 #initGuess = (0.461, 0.740, 0.754, -0.754)  # expected results for LLbar-data
-initGuess = (0.4, 0.7, 0.7, -0.7)      # Initial guess
+initGuess = (0.2, 0.2, 0.754, -0.754)      # Initial guess
+fixParams = (False, False, True, True)    # Specify if any parameters are fix (to their initial value)
 bnds = ((-1,1),(-PI,PI),(-1,1),(-1,1))  # bounds on parameters (needed for scipy)
 ftol = 10**-3                           # tolerance for scipy
 parNames = ('alpha', 'dPhi', 'alpha_1', 'alpha_2')  # Parameter names for Minuit
@@ -258,6 +261,8 @@ def main():
         print(f"Optimizing with Minuit.migrad\ninitial guess: {initGuess}")
         m = Minuit(negLLMinuit, initGuess, name=parNames) # define minuit function and initial guess
     
+    m.fixed = fixParams
+    print(m.fixed)
     m.errordef = Minuit.LIKELIHOOD      # important
     m.migrad()  # run minuit optimziation
 
