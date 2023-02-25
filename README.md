@@ -1,2 +1,2 @@
 # MLL-python
-MLL fit alogrithm implemented in python. For LL-bar decay.
+MLL fit algorithm implemented in python. For LL-bar decay.
